@@ -7,11 +7,11 @@ test.describe('invoice studio', () => {
     await expect(page.getByRole('heading', { name: 'Professional invoices in minutes.' })).toBeVisible()
     await expect(page.getByText('No invoices yet')).toBeVisible()
     await page.getByRole('button', { name: 'Create invoice' }).first().click()
-    await expect(page).toHaveURL(/#\/create/)
+    await expect(page).toHaveURL(/\/create/)
   })
 
   test('create, calculate, save, reopen and persist an invoice', async ({ page }) => {
-    await page.goto('/#/create')
+    await page.goto('/create')
     await expect(page.getByLabel('Invoice number')).toHaveValue('INV-0001')
     await fillBasicInvoice(page, { items: [{ name: 'Website design', qty: '2', price: '1250.50' }, { name: 'Hosting', qty: '12', price: '15' }] })
     // per-item 10% tax on item 1
@@ -26,27 +26,27 @@ test.describe('invoice studio', () => {
 
     await page.getByRole('button', { name: 'Save invoice' }).first().click()
     await expect(page.getByText('Invoice INV-0001 saved.')).toBeVisible()
-    await expect(page).toHaveURL(/#\/edit\//)
+    await expect(page).toHaveURL(/\/edit\//)
 
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Edit INV-0001' })).toBeVisible()
-    await page.goto('/#/invoices')
+    await page.goto('/invoices')
     await expect(page.getByText('Acme Corporation')).toBeVisible()
     await expect(page.getByText('$2,931.10')).toBeVisible()
 
     // next invoice number advances
-    await page.goto('/#/create')
+    await page.goto('/create')
     await expect(page.getByLabel('Invoice number')).toHaveValue('INV-0002')
   })
 
   test('validation blocks saving incomplete invoices and duplicate numbers', async ({ page }) => {
-    await page.goto('/#/create')
+    await page.goto('/create')
     await page.getByRole('button', { name: 'Save invoice' }).first().click()
     await expect(page.getByRole('alert').filter({ hasText: 'Please fix' })).toContainText('Add a customer name')
   })
 
   test('autosaves unsaved work and restores it after reload', async ({ page }) => {
-    await page.goto('/#/create')
+    await page.goto('/create')
     await page.getByRole('tab', { name: 'From & To' }).click()
     await page.getByLabel('Customer name').fill('Draft Customer')
     await page.waitForTimeout(900)
@@ -57,7 +57,7 @@ test.describe('invoice studio', () => {
   })
 
   test('custom fields and sections render in preview', async ({ page }) => {
-    await page.goto('/#/create')
+    await page.goto('/create')
     await page.getByRole('tab', { name: 'Extras' }).click()
     await page.getByRole('button', { name: 'Add custom field' }).click()
     await page.getByLabel('Label').first().fill('Project name')
@@ -70,7 +70,7 @@ test.describe('invoice studio', () => {
   })
 
   test('logo upload (SVG is rasterised) and positioning', async ({ page }) => {
-    await page.goto('/#/create')
+    await page.goto('/create')
     await page.getByRole('tab', { name: 'From & To' }).click()
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="80"><rect width="200" height="80" fill="#0692F4"/><script>alert(1)</script></svg>'
     await page.getByLabel('Upload logo').setInputFiles({ name: 'logo.svg', mimeType: 'image/svg+xml', buffer: Buffer.from(svg) })
@@ -86,7 +86,7 @@ test.describe('invoice studio', () => {
   })
 
   test('downloads a real PDF and supports multi-page invoices', async ({ page }) => {
-    await page.goto('/#/create')
+    await page.goto('/create')
     const items = Array.from({ length: 45 }, (_, i) => ({ name: `Line item ${i + 1} with a reasonably long description to wrap`, qty: '1', price: '10' }))
     await page.getByRole('tab', { name: 'From & To' }).click()
     await page.getByLabel('Customer name').fill('Multi Page Customer')
@@ -111,7 +111,7 @@ test.describe('invoice studio', () => {
 
   test('every template renders and exports to PDF', async ({ page }) => {
     test.setTimeout(240_000)
-    await page.goto('/#/create')
+    await page.goto('/create')
     await fillBasicInvoice(page)
     await page.getByRole('tab', { name: 'Design' }).click()
     const names = ['Classic Professional', 'Modern Minimal', 'Corporate Blue', 'Executive', 'Creative Studio', 'Elegant Dark Accent', 'Compact Invoice', 'Service Invoice', 'Retail Invoice', 'Modern Business']
@@ -135,7 +135,7 @@ test.describe('invoice studio', () => {
   })
 
   test('print renders only the invoice pages', async ({ page }) => {
-    await page.goto('/#/create')
+    await page.goto('/create')
     await fillBasicInvoice(page)
     await page.evaluate(() => { (window as unknown as { __printed: number }).__printed = 0; window.print = () => { (window as unknown as { __printed: number }).__printed++ } })
     await page.getByRole('button', { name: 'Print' }).click()
@@ -149,7 +149,7 @@ test.describe('invoice studio', () => {
   })
 
   test('templates gallery preview and use', async ({ page }) => {
-    await page.goto('/#/templates')
+    await page.goto('/templates')
     await page.getByRole('button', { name: 'Preview Executive' }).click()
     await expect(page.getByRole('dialog')).toContainText('Executive')
     await page.getByRole('button', { name: 'Use this template' }).click()
@@ -158,16 +158,18 @@ test.describe('invoice studio', () => {
   })
 
   test('backup export/import round trip and settings defaults', async ({ page }) => {
-    await page.goto('/#/settings')
+    await page.goto('/settings')
     await page.getByLabel('Business name').fill('Default Biz Co')
+    await page.getByRole('button', { name: 'Add business' }).last().click()
+    await expect(page.getByText('“Default Biz Co” saved.')).toBeVisible()
     await page.getByLabel('Number prefix').fill('ACME-')
     await page.getByRole('button', { name: 'Save settings' }).click()
     await expect(page.getByText(/Settings saved/)).toBeVisible()
-    await page.goto('/#/create')
+    await page.goto('/create')
     await expect(page.getByLabel('Invoice number')).toHaveValue('ACME-0001')
     await page.getByRole('tab', { name: 'From & To' }).click()
     await expect(page.getByLabel('Business name')).toHaveValue('Default Biz Co')
-    await page.goto('/#/settings')
+    await page.goto('/settings')
     const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export backup (JSON)' }).click()])
     const json = JSON.parse((await readDownload(dl)).toString())
     expect(json.app).toBe('invoice-studio')

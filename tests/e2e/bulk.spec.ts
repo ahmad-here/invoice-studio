@@ -12,7 +12,7 @@ INV-005,2026-11-01,2026-11-15,Bad Cur,c@example.com,Thing,1,10,0,XYZ`
 
 test('bulk CSV: validates, reports, and downloads ZIP + combined PDF', async ({ page }) => {
   test.setTimeout(180_000)
-  await page.goto('/#/bulk')
+  await page.goto('/bulk')
   await page.getByLabel('Choose CSV or JSON file').setInputFiles({ name: 'invoices.csv', mimeType: 'text/csv', buffer: Buffer.from(CSV) })
   await expect(page.getByText('Ready to generate', { exact: true }).locator('..')).toContainText('2')
   await expect(page.getByText('Failed invoices', { exact: true }).locator('..')).toContainText('3')
@@ -39,13 +39,13 @@ test('bulk CSV: validates, reports, and downloads ZIP + combined PDF', async ({ 
   await page.getByLabel('Select INV-002').uncheck()
   await expect(page.getByText('1 of 2 selected')).toBeVisible()
   await page.getByRole('button', { name: 'Save to invoices' }).click()
-  await page.goto('/#/invoices')
+  await page.goto('/invoices')
   await expect(page.getByText('John Smith')).toBeVisible()
 })
 
 test('bulk JSON: malformed then valid; hundreds of invoices stay responsive', async ({ page }) => {
   test.setTimeout(180_000)
-  await page.goto('/#/bulk')
+  await page.goto('/bulk')
   await page.getByLabel('Choose CSV or JSON file').setInputFiles({ name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('{"invoices": [') })
   await expect(page.getByText(/Malformed JSON/)).toBeVisible()
   await page.getByRole('button', { name: 'Start over' }).click()
@@ -60,7 +60,7 @@ test('bulk JSON: malformed then valid; hundreds of invoices stay responsive', as
 })
 
 test('bulk mapping fixes aliased/unknown headers', async ({ page }) => {
-  await page.goto('/#/bulk')
+  await page.goto('/bulk')
   const csv = 'Ref No,Client,Product,Qty,Price\nR1,Ann,Widget,2,5\n'
   await page.getByLabel('Choose CSV or JSON file').setInputFiles({ name: 'm.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) })
   await expect(page.getByText(/Required column\(s\) not mapped: Invoice number/)).toBeVisible()

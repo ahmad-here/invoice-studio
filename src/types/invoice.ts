@@ -29,6 +29,8 @@ export interface Logo {
 }
 
 export interface BusinessProfile {
+  /** profile id (saved profiles); invoices keep a snapshot copy */
+  id?: string
   name: string
   logo?: Logo
   address: string
@@ -112,6 +114,8 @@ export interface Invoice {
   template: TemplateId
   paperSize: PaperSize
   accentColor?: string
+  /** id of the business profile this invoice was created from */
+  businessId?: string
   business: BusinessProfile
   customer: Customer
   items: InvoiceItem[]
@@ -177,6 +181,7 @@ export interface UserPreferences {
   nextNumber: number
   defaultTemplate: TemplateId
   defaultPaperSize: PaperSize
+  defaultBusinessId?: string
   dateFormat: DateFormat
   locale: string
   dueInDays: number

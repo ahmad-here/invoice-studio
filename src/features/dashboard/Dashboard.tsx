@@ -1,5 +1,7 @@
+import { useSeo } from '@/hooks/useSeo'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, FilePlus2, FileText, Layers, ShieldCheck, WifiOff, Zap } from 'lucide-react'
+import { ArrowRight, FilePlus2, FileText, Layers, ShieldCheck, Smartphone, WifiOff, Zap } from 'lucide-react'
+import { isNative } from '@/services/files'
 import { useMemo } from 'react'
 import { useApp } from '@/app/store'
 import { Button, Card, EmptyState } from '@/components/common/ui'
@@ -10,6 +12,7 @@ import { InvoiceListItem } from '@/features/saved-invoices/InvoiceListItem'
 import { todayISO } from '@/lib/dates'
 
 export default function Dashboard() {
+  useSeo({ title: 'Free Invoice Generator – Create, Print & Bulk Generate PDF Invoices | Invoice Studio', description: 'Free online invoice generator. Create professional PDF invoices with 10 templates, print instantly, or bulk generate hundreds from CSV or JSON. No sign-up, works offline.', path: '/' })
   const { invoices } = useApp()
   const nav = useNavigate()
   const stats = useMemo(() => {
@@ -34,6 +37,7 @@ export default function Dashboard() {
           <div className="mt-7 flex flex-wrap gap-3">
             <Button size="lg" variant="primary" icon={<FilePlus2 className="size-5" />} onClick={() => nav('/create')}>Create invoice</Button>
             <Button size="lg" icon={<Layers className="size-5" />} onClick={() => nav('/bulk')}>Bulk generate</Button>
+            {!isNative() && <Button size="lg" variant="ghost" icon={<Smartphone className="size-5" />} onClick={() => nav('/download')}>Get the Android app</Button>}
           </div>
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-muted">
             <li className="flex items-center gap-1.5"><ShieldCheck className="size-4 text-primary" />Private — data never leaves your device</li>

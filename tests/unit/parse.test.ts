@@ -63,6 +63,12 @@ B1,Zed,Y,1,1`
     const { result } = processFile('x.csv', 'invoice_number,customer_name,item_name,quantity,unit_price\n"A1,Ann,X,1,1', ctx)
     expect(result.issues.length).toBeGreaterThan(0)
   })
+  it('handles Excel UTF-8 BOM in CSV and JSON', () => {
+    const BOM = String.fromCharCode(0xfeff)
+    const { result } = processFile('x.csv', `${BOM}invoice_number,customer_name,item_name,quantity,unit_price\nZ1,Ann,X,1,1`, ctx)
+    expect(result.invoices[0]?.number).toBe('Z1')
+    expect(parseJsonText(`${BOM}[{"invoiceNumber":"J","customer":{"name":"A"},"items":[{"name":"x","quantity":1,"unitPrice":1}]}]`, ctx).invoices).toHaveLength(1)
+  })
   it('falls back to saved business profile', () => {
     const { result } = processFile('x.csv', 'invoice_number,customer_name,item_name,quantity,unit_price\nC1,Ann,X,1,1', ctx)
     expect(result.invoices[0].business.name).toBe('Saved Co')

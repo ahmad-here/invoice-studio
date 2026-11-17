@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { expectNoHorizontalOverflow } from './helpers'
 
-for (const route of ['/', '/#/create', '/#/templates', '/#/bulk', '/#/invoices', '/#/settings']) {
+for (const route of ['/', '/create', '/templates', '/bulk', '/invoices', '/settings']) {
   test(`mobile layout has no horizontal overflow: ${route}`, async ({ page }) => {
     await page.goto(route)
     await page.waitForLoadState('networkidle')
@@ -11,7 +11,7 @@ for (const route of ['/', '/#/create', '/#/templates', '/#/bulk', '/#/invoices',
 }
 
 test('mobile editor toggles between edit and preview', async ({ page }) => {
-  await page.goto('/#/create')
+  await page.goto('/create')
   await page.getByRole('tab', { name: 'From & To' }).click()
   await page.getByLabel('Customer name').fill('Phone Customer')
   await page.getByRole('radio', { name: 'Preview' }).click()

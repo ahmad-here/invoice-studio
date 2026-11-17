@@ -1,6 +1,6 @@
 import { memo, useRef, useState, type ReactNode } from 'react'
 import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, ImagePlus, Plus, Trash2, GripVertical, X, Check } from 'lucide-react'
-import type { CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals, Logo, LogoPosition } from '@/types/invoice'
+import type { BusinessProfile, CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals, Logo, LogoPosition } from '@/types/invoice'
 import { Button, Input, Segmented, Select, Switch, Textarea, cx, Badge } from '@/components/common/ui'
 import { MoneyInput, NumberInput } from '@/components/forms/inputs'
 import { CURRENCIES, formatMoney, convertMinorPrecision } from '@/lib/money'
@@ -124,11 +124,27 @@ export function LogoEditor({ logo, onChange }: { logo?: Logo; onChange: (l: Logo
   )
 }
 
-export const BusinessSection = memo(function BusinessSection({ inv, update, onSaveProfile }: P & { onSaveProfile: () => void }) {
+export const BusinessSection = memo(function BusinessSection({ inv, update, profiles, onSaveProfile }: P & { profiles: BusinessProfile[]; onSaveProfile: (asNew: boolean) => void }) {
   const b = inv.business
   const set = (k: keyof typeof b, v: string) => update((i) => ({ business: { ...i.business, [k]: v } }))
+  const linked = profiles.find((x) => x.id === inv.businessId)
   return (
-    <Section title="From (your business)" description="Pre-filled from your business profile." aside={<Button size="sm" variant="ghost" onClick={onSaveProfile}>Save as default</Button>}>
+    <Section title="From (your business)" description={profiles.length ? 'Choose a saved business or edit the details for this invoice only.' : 'Save these details as a business profile to reuse them.'} aside={
+      <div className="flex gap-1">
+        {linked && <Button size="sm" variant="ghost" onClick={() => onSaveProfile(false)}>Update profile</Button>}
+        <Button size="sm" variant="ghost" onClick={() => onSaveProfile(true)}>Save as new profile</Button>
+      </div>
+    }>
+      {profiles.length > 0 && (
+        <Select label="Business profile" className="mb-4" data-tour="business-select" value={inv.businessId ?? ''} onChange={(e) => {
+          const pick = profiles.find((x) => x.id === e.target.value)
+          if (pick) update({ business: structuredClone(pick), businessId: pick.id })
+          else update({ businessId: undefined })
+        }}>
+          <option value="">Custom (this invoice only)</option>
+          {profiles.map((x) => <option key={x.id} value={x.id}>{x.name || 'Untitled business'}</option>)}
+        </Select>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2"><LogoEditor logo={b.logo} onChange={(logo) => update((i) => ({ business: { ...i.business, logo } }))} /></div>
         <Input label="Business name" value={b.name} maxLength={200} className="sm:col-span-2" onChange={(e) => set('name', e.target.value)} autoComplete="organization" />

@@ -1,3 +1,4 @@
+import { useSeo } from '@/hooks/useSeo'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Copy, Download, FileText, MoreHorizontal, Pencil, Printer, Search, Trash2 } from 'lucide-react'
@@ -13,6 +14,7 @@ type Sort = 'issue-desc' | 'issue-asc' | 'due-asc' | 'amount-desc' | 'updated-de
 const PAGE = 50
 
 export default function SavedPage() {
+  useSeo({ title: 'Saved Invoices', description: 'Your saved invoices and drafts, stored privately on this device.', path: '/invoices', noindex: true })
   const { invoices, deleteInvoice, saveInvoice, nextNumber } = useApp()
   const nav = useNavigate()
   const [q, setQ] = useState('')

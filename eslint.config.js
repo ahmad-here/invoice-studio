@@ -5,6 +5,7 @@ import globals from 'globals'
 export default tseslint.config(
   { ignores: ['dist', 'android', 'dev-dist', 'node_modules', 'playwright-report', 'test-results'] },
   js.configs.recommended,
+  { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
   ...tseslint.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],

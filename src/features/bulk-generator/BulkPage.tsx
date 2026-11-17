@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useSeo } from '@/hooks/useSeo'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, CheckCircle2, Download, Eye, FileArchive, FileJson, FileSpreadsheet, FileStack, RefreshCw, Save, UploadCloud, XCircle } from 'lucide-react'
 import type { BulkImportResult, Invoice, PaperSize, TemplateId } from '@/types/invoice'
 import { useApp, toast } from '@/app/store'
@@ -18,14 +19,17 @@ const PAGE = 50
 function runWorker(name: string, text: string, ctx: ParseContext, mapping?: Record<string, string | null>): Promise<Omit<Parsed, 'name' | 'text'>> {
   return new Promise((resolve, reject) => {
     const w = new Worker(new URL('../../services/bulk/bulk.worker.ts', import.meta.url), { type: 'module' })
-    w.onmessage = (e) => { w.terminate(); e.data.ok ? resolve(e.data) : reject(new Error(e.data.error)) }
+    w.onmessage = (e) => { w.terminate(); if (e.data.ok) resolve(e.data); else reject(new Error(e.data.error)) }
     w.onerror = (e) => { w.terminate(); reject(new Error(e.message || 'Parser crashed')) }
     w.postMessage({ name, text, ctx, mapping })
   })
 }
 
 export default function BulkPage() {
-  const { prefs, business, invoices: saved, saveMany } = useApp()
+  useSeo({ title: 'Bulk Invoice Generator – Create Invoices from CSV or JSON', description: 'Generate hundreds of PDF invoices from one CSV or JSON file. Validation report, ZIP download and combined PDF. Free and private.', path: '/bulk' })
+  const { prefs, business: defaultBusiness, businesses, invoices: saved, saveMany } = useApp()
+  const [businessId, setBusinessId] = useState<string>(defaultBusiness.id ?? '')
+  const business = businesses.find((b) => b.id === businessId) ?? defaultBusiness
   const [parsed, setParsed] = useState<Parsed | null>(null)
   const [loading, setLoading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
@@ -83,6 +87,15 @@ export default function BulkPage() {
       toast.success('Mapping applied and data re-validated.')
     } catch (e) { toast.error((e as Error).message) } finally { setLoading(false) }
   }
+
+  // Re-run validation when the fallback business profile changes
+  const lastBiz = useRef(businessId)
+  useEffect(() => {
+    if (lastBiz.current === businessId) return
+    lastBiz.current = businessId
+    if (parsed) revalidate()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId])
 
   const result = parsed?.result
   const ready: Invoice[] = useMemo(() => (result?.invoices ?? []).map((i) => ({ ...i, template, paperSize: paper })), [result, template, paper])
@@ -273,6 +286,11 @@ export default function BulkPage() {
             <Card className="p-5">
               <h2 className="mb-4 text-[15px] font-semibold">Output options</h2>
               <div className="grid gap-4 md:grid-cols-3">
+                {businesses.length > 1 && (
+                  <Select label="Business profile" className="md:col-span-3" hint="Used for invoices whose file doesn't include business details. " value={businessId} onChange={(e) => setBusinessId(e.target.value)}>
+                    {businesses.map((b) => <option key={b.id} value={b.id}>{b.name || 'Untitled business'}</option>)}
+                  </Select>
+                )}
                 <Select label="Template" value={template} onChange={(e) => setTemplate(e.target.value as TemplateId)}>
                   {TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </Select>

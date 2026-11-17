@@ -25,6 +25,7 @@ const logo = z.object({
 }).optional().catch(undefined)
 
 export const businessSchema = z.object({
+  id: z.string().max(100).optional().catch(undefined),
   name: str(300), logo, address: str(), email: str(300), phone: str(100), website: str(300),
   taxNumber: str(100), vatNumber: str(100), extra: str(),
 })
@@ -40,6 +41,7 @@ export const invoiceSchema = z.object({
   template: z.enum(TEMPLATE_IDS).catch('classic'),
   paperSize: z.enum(['A4', 'Letter', 'Legal']).catch('A4'),
   accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().catch(undefined),
+  businessId: z.string().max(100).optional().catch(undefined),
   business: businessSchema.catch(emptyBusiness()),
   customer: z.object({
     name: str(300), company: str(300), email: str(300), phone: str(100), billingAddress: str(), shippingAddress: str(),
@@ -69,6 +71,7 @@ export const prefsSchema = z.object({
   numberPrefix: str(30), nextNumber: z.number().int().min(1).catch(1),
   defaultTemplate: z.enum(TEMPLATE_IDS).catch('classic'),
   defaultPaperSize: z.enum(['A4', 'Letter', 'Legal']).catch('A4'),
+  defaultBusinessId: z.string().max(100).optional().catch(undefined),
   dateFormat: z.enum(['locale', 'YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'D MMM YYYY']).catch('D MMM YYYY'),
   locale: str(20), dueInDays: z.number().int().min(0).max(365).catch(14),
   payment: z.object({ method: str(100), bankName: str(200), accountHolder: str(200), accountNumber: str(100), iban: str(100), swift: str(50), link: str(500) }),
@@ -101,5 +104,6 @@ export interface BackupFile {
   exportedAt: string
   preferences: UserPreferences
   business: BusinessProfile
+  businesses?: BusinessProfile[]
   invoices: Invoice[]
 }

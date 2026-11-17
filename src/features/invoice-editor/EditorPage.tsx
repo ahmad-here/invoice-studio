@@ -1,3 +1,4 @@
+import { useSeo } from '@/hooks/useSeo'
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Download, Eye, FilePlus2, Pencil, Printer, Save, RotateCcw } from 'lucide-react'
@@ -41,11 +42,12 @@ function validate(inv: Invoice, duplicate: boolean): string[] {
 }
 
 export default function EditorPage() {
+  useSeo({ title: 'Create an Invoice Online – Free Invoice Maker', description: 'Fill in your invoice with a live preview, then download a PDF or print. Free, private and no sign-up.', path: '/create' })
   const { id } = useParams()
   const nav = useNavigate()
   const [search] = useSearchParams()
   const templateParam = TEMPLATES.find((t) => t.id === search.get('template'))?.id
-  const { prefs, business, invoices, saveInvoice, saveBusiness, nextNumber } = useApp()
+  const { prefs, business, businesses, invoices, saveInvoice, saveBusiness, nextNumber } = useApp()
   const [inv, setInv] = useState<Invoice | null>(null)
   const [savedSnapshot, setSavedSnapshot] = useState<string>('')
   const [restored, setRestored] = useState(false)
@@ -62,7 +64,7 @@ export default function EditorPage() {
     let live = true
     ;(async () => {
       const draft = await storage.getEditorDraft().catch(() => null)
-      let next: Invoice | null = null
+      let next: Invoice
       let snap = ''
       if (id) {
         const saved = invoices.find((i) => i.id === id) ?? (await storage.getInvoice(id))
@@ -212,7 +214,12 @@ export default function EditorPage() {
             {tab === 'details' && <DetailsSection inv={inv} update={update} numberError={duplicateNumber ? 'This number is already used by a saved invoice' : null} />}
             {tab === 'parties' && <>
               <CustomerSection inv={inv} update={update} />
-              <BusinessSection inv={inv} update={update} onSaveProfile={async () => { await saveBusiness(inv.business); toast.success('Business profile saved as default.') }} />
+              <BusinessSection inv={inv} update={update} profiles={businesses} onSaveProfile={async (asNew) => {
+                if (!inv.business.name.trim()) { toast.error('Enter a business name first.'); return }
+                const saved = await saveBusiness(asNew ? { ...inv.business, id: undefined } : { ...inv.business, id: inv.businessId })
+                update({ businessId: saved.id, business: { ...inv.business, id: saved.id } })
+                toast.success(asNew ? `Saved “${saved.name}” as a business profile.` : `Updated “${saved.name}”.`)
+              }} />
             </>}
             {tab === 'items' && <>
               <ItemsSection inv={inv} update={update} totals={totals} defaultTax={prefs.defaultTaxRate} />

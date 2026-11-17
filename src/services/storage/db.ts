@@ -2,6 +2,8 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { BusinessProfile, Invoice, UserPreferences } from '@/types/invoice'
 import { SCHEMA_VERSION } from '@/types/invoice'
 import { migrateBusiness, migrateInvoice, migratePrefs, type BackupFile } from '@/lib/schema'
+import { emptyBusiness } from '@/lib/defaults'
+import { uid } from '@/lib/sanitize'
 
 interface StudioDB extends DBSchema {
   invoices: { key: string; value: Invoice; indexes: { updatedAt: number } }
@@ -48,11 +50,18 @@ export const storage = {
   async savePrefs(p: UserPreferences): Promise<void> {
     await (await db()).put('kv', p, 'prefs')
   },
-  async getBusiness(): Promise<BusinessProfile> {
-    return migrateBusiness(await (await db()).get('kv', 'business'))
+  /** All business profiles. Migrates the single legacy 'business' record on first read. */
+  async getBusinesses(): Promise<BusinessProfile[]> {
+    const d = await db()
+    const list = await d.get('kv', 'businesses')
+    if (Array.isArray(list)) return list.map((b) => ({ ...migrateBusiness(b), id: (b as BusinessProfile).id || uid() }))
+    const legacy = await d.get('kv', 'business')
+    const migrated = legacy ? [{ ...migrateBusiness(legacy), id: uid() }] : []
+    if (migrated.length) await d.put('kv', migrated, 'businesses')
+    return migrated
   },
-  async saveBusiness(b: BusinessProfile): Promise<void> {
-    await (await db()).put('kv', b, 'business')
+  async saveBusinesses(list: BusinessProfile[]): Promise<void> {
+    await (await db()).put('kv', list, 'businesses')
   },
   async getEditorDraft(): Promise<Invoice | null> {
     return migrateInvoice(await (await db()).get('kv', 'editorDraft'))
@@ -68,7 +77,8 @@ export const storage = {
       schemaVersion: SCHEMA_VERSION,
       exportedAt: new Date().toISOString(),
       preferences: await this.getPrefs(),
-      business: await this.getBusiness(),
+      business: (await this.getBusinesses())[0] ?? emptyBusiness(),
+      businesses: await this.getBusinesses(),
       invoices: await this.listInvoices(),
     }
   },
@@ -84,7 +94,15 @@ export const storage = {
     const list = Array.isArray(b.invoices) ? b.invoices : []
     const valid = list.map(migrateInvoice).filter((x): x is Invoice => !!x)
     if (b.preferences) await this.savePrefs(migratePrefs(b.preferences))
-    if (b.business) await this.saveBusiness(migrateBusiness(b.business))
+    if (Array.isArray(b.businesses) && b.businesses.length) {
+      const existing = await this.getBusinesses()
+      const incoming = b.businesses.map((x) => ({ ...migrateBusiness(x), id: (x as BusinessProfile).id || uid() }))
+      const ids = new Set(incoming.map((x) => x.id))
+      await this.saveBusinesses([...existing.filter((x) => !ids.has(x.id ?? "")), ...incoming])
+    } else if (b.business && migrateBusiness(b.business).name) {
+      const existing = await this.getBusinesses()
+      await this.saveBusinesses([...existing, { ...migrateBusiness(b.business), id: uid() }])
+    }
     await this.saveInvoices(valid)
     return { imported: valid.length, skipped: list.length - valid.length }
   },

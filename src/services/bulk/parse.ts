@@ -32,7 +32,7 @@ export function parseNum(v: unknown): number {
 }
 
 export function parseCsvText(text: string): CsvTable {
-  const res = Papa.parse<Record<string, string>>(text.replace(/^﻿/, ''), {
+  const res = Papa.parse<Record<string, string>>(text.replace(/^\uFEFF/, ''), {
     header: true,
     skipEmptyLines: 'greedy',
     transformHeader: (h) => cleanText(h, 200).trim(),
@@ -270,7 +270,7 @@ const s = (v: unknown) => (typeof v === 'string' || typeof v === 'number' ? clea
 export function parseJsonText(text: string, ctx: ParseContext): BulkImportResult {
   let data: unknown
   try {
-    data = JSON.parse(text.replace(/^﻿/, ''))
+    data = JSON.parse(text.replace(/^\uFEFF/, ''))
   } catch (e) {
     return { format: 'json', invoices: [], failed: [], totalRows: 0, totalItems: 0, issues: [{ row: 0, message: `Malformed JSON: ${(e as Error).message}`, severity: 'error' }] }
   }

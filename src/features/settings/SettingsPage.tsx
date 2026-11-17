@@ -1,10 +1,12 @@
+import { useSeo } from '@/hooks/useSeo'
 import { useEffect, useRef, useState } from 'react'
 import { Download, Upload, Trash2, ShieldCheck } from 'lucide-react'
-import type { BusinessProfile, CurrencyCode, DateFormat, PaperSize, TemplateId, UserPreferences } from '@/types/invoice'
+import type { CurrencyCode, DateFormat, PaperSize, TemplateId, UserPreferences } from '@/types/invoice'
 import { useApp, toast } from '@/app/store'
 import { Button, Card, ConfirmDialog, Input, PageHeader, Select, Textarea, Badge } from '@/components/common/ui'
 import { NumberInput } from '@/components/forms/inputs'
-import { LogoEditor, Section } from '@/features/invoice-editor/sections'
+import { Section } from '@/features/invoice-editor/sections'
+import { BusinessProfiles } from './BusinessProfiles'
 import { CURRENCIES, formatMoney } from '@/lib/money'
 import { formatDate, todayISO } from '@/lib/dates'
 import { formatInvoiceNumber } from '@/lib/defaults'
@@ -15,21 +17,20 @@ import { saveText } from '@/services/files'
 const LOCALES = [['en-US', 'English (US) — 1,234.56'], ['en-GB', 'English (UK) — 1,234.56'], ['de-DE', 'German — 1.234,56'], ['fr-FR', 'French — 1 234,56'], ['en-IN', 'English (India) — 1,23,456.78'], ['ar-AE', 'Arabic (UAE)'], ['ur-PK', 'Urdu (Pakistan)']] as const
 
 export default function SettingsPage() {
+  useSeo({ title: 'Settings', description: 'Business profiles, invoice defaults and backups.', path: '/settings', noindex: true })
   const app = useApp()
-  const [b, setB] = useState<BusinessProfile>(app.business)
   const [p, setP] = useState<UserPreferences>(app.prefs)
   const [saving, setSaving] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
   const [importing, setImporting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  useEffect(() => { setB(app.business); setP(app.prefs) }, [app.business, app.prefs])
-  const dirty = JSON.stringify(b) !== JSON.stringify(app.business) || JSON.stringify(p) !== JSON.stringify(app.prefs)
-  const setBf = (k: keyof BusinessProfile, v: string) => setB({ ...b, [k]: v })
+  useEffect(() => { setP(app.prefs) }, [app.prefs])
+  const dirty = JSON.stringify(p) !== JSON.stringify(app.prefs)
   const setPay = (k: keyof UserPreferences['payment'], v: string) => setP({ ...p, payment: { ...p.payment, [k]: v } })
 
   const save = async () => {
     setSaving(true)
-    try { await app.saveBusiness(b); await app.savePrefs(p); toast.success('Settings saved. New invoices will use these defaults.') }
+    try { await app.savePrefs({ ...p, defaultBusinessId: app.prefs.defaultBusinessId }); toast.success('Settings saved. New invoices will use these defaults.') }
     catch (e) { toast.error(`Could not save settings: ${(e as Error).message}`) }
     finally { setSaving(false) }
   }
@@ -59,21 +60,10 @@ export default function SettingsPage() {
 
   return (
     <div className="pb-16">
-      <PageHeader title="Settings" description="Your business profile and defaults are applied to every new invoice." actions={<Button variant="primary" onClick={save} loading={saving} disabled={!dirty}>Save settings</Button>} />
+      <PageHeader title="Settings" description="Business profiles and defaults applied to every new invoice." actions={<Button variant="primary" onClick={save} loading={saving} disabled={!dirty}>Save settings</Button>} />
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
-          <Section title="Business profile">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2"><LogoEditor logo={b.logo} onChange={(logo) => setB({ ...b, logo })} /></div>
-              <Input label="Business name" className="sm:col-span-2" value={b.name} maxLength={200} onChange={(e) => setBf('name', e.target.value)} />
-              <Textarea label="Address" className="sm:col-span-2" rows={2} value={b.address} maxLength={500} onChange={(e) => setBf('address', e.target.value)} />
-              <Input label="Email" type="email" value={b.email} onChange={(e) => setBf('email', e.target.value)} />
-              <Input label="Phone" type="tel" value={b.phone} onChange={(e) => setBf('phone', e.target.value)} />
-              <Input label="Website" value={b.website} onChange={(e) => setBf('website', e.target.value)} />
-              <Input label="Tax registration no." value={b.taxNumber} onChange={(e) => setBf('taxNumber', e.target.value)} />
-              <Input label="VAT number" value={b.vatNumber} onChange={(e) => setBf('vatNumber', e.target.value)} />
-            </div>
-          </Section>
+          <BusinessProfiles />
           <Section title="Default payment details">
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Payment method" value={p.payment.method} onChange={(e) => setPay('method', e.target.value)} />
@@ -132,7 +122,7 @@ export default function SettingsPage() {
       {dirty && (
         <Card className="fixed inset-x-4 bottom-20 z-30 mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3 shadow-lg lg:bottom-6">
           <span className="text-sm text-ink">You have unsaved settings.</span>
-          <span className="flex gap-2"><Button size="sm" onClick={() => { setB(app.business); setP(app.prefs) }}>Discard</Button><Button size="sm" variant="primary" onClick={save} loading={saving}>Save</Button></span>
+          <span className="flex gap-2"><Button size="sm" onClick={() => setP(app.prefs)}>Discard</Button><Button size="sm" variant="primary" onClick={save} loading={saving}>Save</Button></span>
         </Card>
       )}
       <ConfirmDialog open={confirmClear} title="Delete all data?" confirmLabel="Delete everything"

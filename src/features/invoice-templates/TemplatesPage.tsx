@@ -1,3 +1,4 @@
+import { useSeo } from '@/hooks/useSeo'
 import { useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Check, Eye } from 'lucide-react'
@@ -10,13 +11,14 @@ import { ScaledPreview } from '@/components/invoice/ScaledPreview'
 import { sampleInvoice } from '@/lib/sample'
 
 export default function TemplatesPage() {
+  useSeo({ title: '10 Free Invoice Templates – Professional PDF Designs', description: 'Browse 10 professional invoice templates: classic, minimal, corporate, executive, creative, compact, service, retail and more. Free PDF download.', path: '/templates' })
   const { prefs, savePrefs } = useApp()
   const nav = useNavigate()
   const [params, setParams] = useSearchParams()
   const open = params.get('t') as TemplateId | null
   const samples = useMemo(() => Object.fromEntries(TEMPLATES.map((t) => [t.id, sampleInvoice(t.id)])), [])
 
-  const useInEditor = (id: TemplateId) => {
+  const applyTemplate = (id: TemplateId) => {
     nav(`/create?template=${id}`)
     toast.success(`${TEMPLATES.find((t) => t.id === id)?.name} applied.`)
   }
@@ -38,7 +40,7 @@ export default function TemplatesPage() {
               <p className="mt-0.5 flex-1 text-xs text-muted">{t.description}</p>
               <div className="mt-3 flex gap-2">
                 <Button size="sm" className="flex-1 justify-center" icon={<Eye className="size-4" />} onClick={() => setParams({ t: t.id })}>Preview</Button>
-                <Button size="sm" variant="primary" className="flex-1 justify-center" onClick={() => useInEditor(t.id)}>Use</Button>
+                <Button size="sm" variant="primary" className="flex-1 justify-center" onClick={() => applyTemplate(t.id)}>Use</Button>
               </div>
             </div>
           </div>
@@ -47,7 +49,7 @@ export default function TemplatesPage() {
 
       <Modal open={!!current} onClose={() => setParams({})} title={current?.name ?? ''} size="lg" footer={current && <>
         <Button onClick={() => setDefault(current.id)} disabled={prefs.defaultTemplate === current.id}>{prefs.defaultTemplate === current.id ? 'Default template' : 'Set as default'}</Button>
-        <Button variant="primary" onClick={() => useInEditor(current.id)}>Use this template</Button>
+        <Button variant="primary" onClick={() => applyTemplate(current.id)}>Use this template</Button>
       </>}>
         {current && <>
           <p className="mb-4 text-sm text-muted">{current.description} Best for: {current.bestFor}.</p>
