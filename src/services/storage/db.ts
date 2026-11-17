@@ -5,6 +5,7 @@ import type { BackupFile } from '@/lib/schema'
 import { fastInvoice, fastPrefs, fastBusiness } from '@/lib/fastMigrate'
 import { emptyBusiness } from '@/lib/defaults'
 import { uid } from '@/lib/sanitize'
+import { KV } from '@/lib/storageKeys'
 
 interface StudioDB extends DBSchema {
   invoices: { key: string; value: Invoice; indexes: { updatedAt: number } }
@@ -79,13 +80,13 @@ export const storage = {
   },
   /** Unsaved editor work, one slot per invoice (`new` for an unsaved new invoice). */
   async getEditorDraft(key: string): Promise<Invoice | null> {
-    const r = await (await db()).get('kv', `editorDraft:${key}`)
+    const r = await (await db()).get('kv', KV.editorDraft(key))
     return fastInvoice(r) ?? (r ? (await import('@/lib/schema')).migrateInvoice(r) : null)
   },
   async saveEditorDraft(key: string, inv: Invoice | null): Promise<void> {
     const d = await db()
-    if (inv) await d.put('kv', inv, `editorDraft:${key}`)
-    else await d.delete('kv', `editorDraft:${key}`)
+    if (inv) await d.put('kv', inv, KV.editorDraft(key))
+    else await d.delete('kv', KV.editorDraft(key))
   },
   async exportBackup(): Promise<BackupFile> {
     const businesses = await this.getBusinesses()

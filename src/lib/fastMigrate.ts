@@ -1,3 +1,4 @@
+import { LOGO_DATA_URL } from './sanitize'
 import { SCHEMA_VERSION, type BusinessProfile, type Invoice, type UserPreferences } from '@/types/invoice'
 
 /**
@@ -14,7 +15,7 @@ export function fastInvoice(r: unknown): Invoice | null {
   if (!Array.isArray((r.customer as Record<string, unknown>).hidden)) return null
   if (typeof r.shipping !== 'number' || typeof r.amountPaid !== 'number' || typeof r.adjustment !== 'number') return null
   const logo = (r.business as Record<string, unknown>).logo
-  if (logo !== undefined && !(obj(logo) && typeof logo.dataUrl === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(logo.dataUrl))) return null
+  if (logo !== undefined && !(obj(logo) && typeof logo.dataUrl === 'string' && LOGO_DATA_URL.test(logo.dataUrl))) return null
   return r as unknown as Invoice
 }
 
@@ -26,6 +27,6 @@ export function fastPrefs(r: unknown): UserPreferences | null {
 export function fastBusiness(r: unknown): BusinessProfile | null {
   if (!obj(r) || typeof r.name !== 'string' || typeof r.address !== 'string' || typeof r.email !== 'string') return null
   const logo = r.logo
-  if (logo !== undefined && !(obj(logo) && typeof logo.dataUrl === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(logo.dataUrl))) return null
+  if (logo !== undefined && !(obj(logo) && typeof logo.dataUrl === 'string' && LOGO_DATA_URL.test(logo.dataUrl))) return null
   return r as unknown as BusinessProfile
 }

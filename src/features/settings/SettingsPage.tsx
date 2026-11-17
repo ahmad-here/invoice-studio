@@ -5,7 +5,7 @@ import type { CurrencyCode, DateFormat, PaperSize, TemplateId, UserPreferences }
 import { useApp, toast } from '@/app/store'
 import { Button, Card, ConfirmDialog, Input, PageHeader, Select, Textarea, Badge } from '@/components/common/ui'
 import { NumberInput } from '@/components/forms/inputs'
-import { Section } from '@/features/invoice-editor/sections'
+import { Section } from '@/components/common/Section'
 import { BusinessProfiles } from './BusinessProfiles'
 import { CURRENCIES, formatMoney } from '@/lib/money'
 import { formatDate, todayISO } from '@/lib/dates'

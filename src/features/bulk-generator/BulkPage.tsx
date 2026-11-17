@@ -244,7 +244,7 @@ export default function BulkPage() {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="size-5 text-warning" />
                   <h2 className="text-[15px] font-semibold">Validation report</h2>
-                  <Badge tone="red">{errors} errors</Badge><Badge tone="amber">{warnings} warnings</Badge>
+                  {errors > 0 && <Badge tone="red">{errors} {errors === 1 ? 'error' : 'errors'}</Badge>}{warnings > 0 && <Badge tone="amber">{warnings} {warnings === 1 ? 'warning' : 'warnings'}</Badge>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Segmented size="sm" label="Filter issues" value={issueFilter} onChange={setIssueFilter} options={[{ value: 'all', label: 'All' }, { value: 'error', label: 'Errors' }, { value: 'warning', label: 'Warnings' }]} />
@@ -253,14 +253,14 @@ export default function BulkPage() {
               </div>
               <div className="max-h-80 overflow-auto scrollbar-thin">
                 <table className="w-full text-left text-[13px]">
-                  <thead className="sticky top-0 bg-canvas text-xs text-muted"><tr><th className="px-5 py-2 font-medium">{result.format === 'csv' ? 'Row' : '#'}</th><th className="px-3 py-2 font-medium">Invoice</th><th className="px-3 py-2 font-medium">Field</th><th className="px-3 py-2 font-medium">Problem</th></tr></thead>
+                  <thead className="sticky top-0 bg-canvas text-xs text-muted"><tr><th className="px-5 py-2 font-medium">{result.format === 'csv' ? 'Row' : '#'}</th><th className="hidden px-3 py-2 font-medium sm:table-cell">Invoice</th><th className="hidden px-3 py-2 font-medium sm:table-cell">Field</th><th className="px-3 py-2 font-medium">Problem</th></tr></thead>
                   <tbody className="divide-y divide-line">
                     {shownIssues.slice(0, issueLimit).map((i, k) => (
                       <tr key={k}>
                         <td className="px-5 py-2 tabular text-muted">{i.row || '—'}</td>
-                        <td className="px-3 py-2 font-medium">{i.invoiceNumber ?? '—'}</td>
-                        <td className="px-3 py-2 text-muted"><code className="text-xs">{i.field ?? ''}</code></td>
-                        <td className={cx('px-3 py-2', i.severity === 'error' ? 'text-danger' : 'text-warning')}>{i.message}</td>
+                        <td className="hidden px-3 py-2 font-medium sm:table-cell">{i.invoiceNumber ?? '—'}</td>
+                        <td className="hidden px-3 py-2 text-muted sm:table-cell"><code className="text-xs">{i.field ?? ''}</code></td>
+                        <td className={cx('px-3 py-2', i.severity === 'error' ? 'text-danger' : 'text-warning')}><span className="mb-0.5 block text-xs text-muted sm:hidden">{[i.invoiceNumber, i.field].filter(Boolean).join(' · ')}</span>{i.message}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -276,15 +276,25 @@ export default function BulkPage() {
             <details className="group rounded-xl border border-line bg-white shadow-xs" open={result.invoices.length === 0}>
               <summary className="flex cursor-pointer items-center justify-between px-5 py-3 text-[15px] font-semibold">Column mapping <span className="text-xs font-normal text-muted">{parsed.headers.length} columns detected</span></summary>
               <div className="border-t border-line p-5">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {CSV_FIELDS.map((f) => (
-                    <Select key={f.key} label={<>{f.label}{f.required && <span className="text-danger"> *</span>}</>} value={mapping[f.key] ?? ''} onChange={(e) => setMapping({ ...mapping, [f.key]: e.target.value || null })}>
-                      <option value="">— Not mapped —</option>
-                      {parsed.headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                    </Select>
-                  ))}
+                {[true, false].map((req) => {
+                  const fields = CSV_FIELDS.filter((f) => !!f.required === req)
+                  const grid = (
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {fields.map((f) => (
+                        <Select key={f.key} label={<>{f.label}{f.required && <span className="text-danger"> *</span>}</>} value={mapping[f.key] ?? ''} onChange={(e) => setMapping({ ...mapping, [f.key]: e.target.value || null })}>
+                          <option value="">Not mapped</option>
+                          {parsed.headers.map((h) => <option key={h} value={h}>{h}</option>)}
+                        </Select>
+                      ))}
+                    </div>
+                  )
+                  return req
+                    ? <div key="req"><h3 className="mb-3 text-sm font-semibold text-ink">Required</h3>{grid}</div>
+                    : <details key="opt" className="mt-5"><summary className="cursor-pointer text-sm font-semibold text-ink">Optional fields ({fields.filter((f) => mapping[f.key]).length}/{fields.length} mapped)</summary><div className="mt-3">{grid}</div></details>
+                })}
+                <div className="sticky bottom-[calc(7.5rem+env(safe-area-inset-bottom))] -mx-5 mt-4 border-t border-line bg-white/95 px-5 py-3 backdrop-blur lg:bottom-0">
+                  <Button variant="primary" loading={loading} onClick={revalidate}>Apply mapping & re-validate</Button>
                 </div>
-                <Button variant="primary" className="mt-4" loading={loading} onClick={revalidate}>Apply mapping & re-validate</Button>
               </div>
             </details>
           )}

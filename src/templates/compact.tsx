@@ -22,7 +22,7 @@ const compact: TemplateDef = {
         <div className="min-w-0"><div className="font-bold text-[#6b7280] uppercase text-[9.5px] tracking-[0.04em]">Bill to</div><CustomerLines ctx={ctx} nameClass="font-semibold" /></div>
         <div className="min-w-0">{hasShipping(ctx) && <><div className="font-bold text-[#6b7280] uppercase text-[9.5px] tracking-[0.04em]">Ship to</div><ShipTo ctx={ctx} /></>}</div>
         <div className="min-w-0">
-          {metaRows(ctx, { number: false }).map(([k, v]) => <div key={k} className="flex justify-between gap-2"><span className="text-[#6b7280]">{k}</span><span className="font-medium text-right break-words min-w-0">{v}</span></div>)}
+          {metaRows(ctx, { number: false }).map(([k, v]) => <div key={k} className="flex justify-between gap-2"><span className="text-[#6b7280]">{k}</span><span className="font-medium text-right [overflow-wrap:anywhere] min-w-0">{v}</span></div>)}
         </div>
       </div>
     </div>

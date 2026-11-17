@@ -40,12 +40,12 @@ export const justify = (p: 'left' | 'center' | 'right') => (p === 'left' ? 'flex
 
 /** Multi-line text with preserved line breaks and safe wrapping of long words. */
 export const Lines = ({ text, className }: { text: string; className?: string }) =>
-  text ? <div className={cx('whitespace-pre-line break-words', className)}>{text}</div> : null
+  text ? <div className={cx('whitespace-pre-line [overflow-wrap:anywhere]', className)}>{text}</div> : null
 
 export function BusinessLines({ ctx, className, nameClass, showName = true }: { ctx: RenderCtx; className?: string; nameClass?: string; showName?: boolean }) {
   const b = ctx.inv.business
   return (
-    <div className={cx('break-words', className)}>
+    <div className={cx('[overflow-wrap:anywhere]', className)}>
       {showName && b.name && <div className={nameClass}>{b.name}</div>}
       <Lines text={b.address} />
       {b.email && <div>{b.email}</div>}
@@ -63,7 +63,7 @@ const shown = (c: Customer, k: Exclude<keyof Customer, 'hidden'>) => !c.hidden.i
 export function CustomerLines({ ctx, className, nameClass }: { ctx: RenderCtx; className?: string; nameClass?: string }) {
   const c = ctx.inv.customer
   return (
-    <div className={cx('break-words', className)}>
+    <div className={cx('[overflow-wrap:anywhere]', className)}>
       {c.name && <div className={nameClass}>{c.name}</div>}
       {shown(c, 'company') && <div>{c.company}</div>}
       {shown(c, 'billingAddress') && <Lines text={c.billingAddress} />}
@@ -101,12 +101,12 @@ export function fieldValue(f: CustomField, ctx: Pick<RenderCtx, 'date'>): string
 
 export function MetaTable({ rows, className, labelClass, valueClass }: { rows: [string, string][]; className?: string; labelClass?: string; valueClass?: string }) {
   return (
-    <table className={cx('border-collapse', className)}>
+    <table className={cx('border-collapse max-w-[300px]', className)}>
       <tbody>
         {rows.map(([k, v], i) => (
           <tr key={i}>
-            <td className={cx('pr-4 py-[2px] align-top whitespace-nowrap', labelClass)}>{k}</td>
-            <td className={cx('py-[2px] align-top break-words whitespace-pre-line', valueClass)}>{v}</td>
+            <td className={cx('pr-4 py-[2px] align-top', labelClass)}>{k}</td>
+            <td className={cx('py-[2px] align-top [overflow-wrap:anywhere] whitespace-pre-line', valueClass)}>{v}</td>
           </tr>
         ))}
       </tbody>
@@ -118,7 +118,7 @@ export function MetaTable({ rows, className, labelClass, valueClass }: { rows: [
 
 export function ItemName({ ctx, item, nameClass, descClass, showSku = false }: { ctx: RenderCtx; item: Invoice['items'][number]; nameClass?: string; descClass?: string; showSku?: boolean }) {
   return (
-    <div className="break-words">
+    <div className="[overflow-wrap:anywhere]">
       <div className={nameClass}>{item.name || ' '}</div>
       {showSku && item.sku && <div className={cx('text-[10.5px] text-[#6b7280]', descClass)}>SKU {item.sku}</div>}
       {ctx.has.description && item.description && <div className={cx('whitespace-pre-line', descClass)}>{item.description}</div>}
@@ -207,7 +207,7 @@ export function PaymentBlock({ ctx, title = 'Payment details', titleClass, class
       {title && <div className={titleClass}>{title}</div>}
       {rows.length > 0 && <MetaTable rows={rows} labelClass={labelClass} />}
       <Lines text={p.instructions} className="mt-1" />
-      {link && <div className="mt-1 break-all">Pay online: {link}</div>}
+      {link && <div className="mt-1 [overflow-wrap:anywhere]">Pay online: {link}</div>}
     </div>
   )
 }
@@ -237,7 +237,7 @@ export function CustomSectionBlock({ ctx, section, titleClass, className, labelC
     <div className={className}>
       <div className={titleClass}>{section.title}</div>
       {f.some((x) => x.type === 'multiline')
-        ? f.map((x) => <div key={x.id} className="mb-1"><span className={labelClass}>{x.label}: </span><span className="whitespace-pre-line break-words">{fieldValue(x, ctx)}</span></div>)
+        ? f.map((x) => <div key={x.id} className="mb-1"><span className={labelClass}>{x.label}: </span><span className="whitespace-pre-line [overflow-wrap:anywhere]">{fieldValue(x, ctx)}</span></div>)
         : <MetaTable rows={f.map((x) => [x.label, fieldValue(x, ctx)])} labelClass={labelClass} />}
     </div>
   )
@@ -258,7 +258,7 @@ export function FooterText({ ctx, page, pageCount, className }: { ctx: RenderCtx
   const f = ctx.inv.footer
   return (
     <div className={cx('flex justify-between gap-6 items-end', className)}>
-      <div className="whitespace-pre-line break-words min-w-0">{f.visible ? f.text : ''}</div>
+      <div className="whitespace-pre-line [overflow-wrap:anywhere] min-w-0">{f.visible ? f.text : ''}</div>
       {pageCount > 1 && <div className="whitespace-nowrap shrink-0">Page {page} of {pageCount}</div>}
     </div>
   )

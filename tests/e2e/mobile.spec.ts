@@ -29,5 +29,6 @@ test('PWA manifest and service worker are served', async ({ page, request }) => 
   expect(m.display).toBe('standalone')
   expect(m.icons.length).toBeGreaterThanOrEqual(2)
   await page.goto('/')
-  await expect.poll(() => page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())), { timeout: 15_000 }).toBe(true)
+  // the worker must actually install + activate (precache incl. the /app.html fallback)
+  await expect.poll(() => page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())?.active), { timeout: 30_000 }).toBe(true)
 })

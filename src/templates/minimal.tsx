@@ -34,7 +34,7 @@ const minimal: TemplateDef = {
         </div>
         <div className="min-w-0 space-y-2">
           {metaRows(ctx, { number: false }).map(([k, v]) => (
-            <div key={k}><div className="text-[10px] uppercase tracking-[0.16em] text-[#6b7280]">{k}</div><div className="text-[#111827] break-words whitespace-pre-line">{v}</div></div>
+            <div key={k}><div className="text-[10px] uppercase tracking-[0.16em] text-[#6b7280]">{k}</div><div className="text-[#111827] [overflow-wrap:anywhere] whitespace-pre-line">{v}</div></div>
           ))}
         </div>
       </div>

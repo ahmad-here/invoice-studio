@@ -30,11 +30,6 @@ export async function printInvoice(inv: Invoice, prefs: Pick<UserPreferences, 'd
   style.textContent = `@page { size: ${mm[0]}mm ${mm[1]}mm; margin: 0; }`
   document.head.appendChild(style)
   const root = createRoot(host)
-  await new Promise<void>((resolve) => {
-    const t = setTimeout(resolve, 8000)
-    root.render(<InvoiceDocument invoice={inv} prefs={prefs} pageGap={0} onReady={() => { clearTimeout(t); resolve() }} />)
-  })
-  await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 50)))
   const cleanup = () => {
     if (activeCleanup !== cleanup) return
     activeCleanup = null
@@ -44,6 +39,12 @@ export async function printInvoice(inv: Invoice, prefs: Pick<UserPreferences, 'd
     window.removeEventListener('afterprint', cleanup)
   }
   activeCleanup = cleanup
+  await new Promise<void>((resolve) => {
+    const t = setTimeout(resolve, 8000)
+    root.render(<InvoiceDocument invoice={inv} prefs={prefs} pageGap={0} onReady={() => { clearTimeout(t); resolve() }} />)
+  })
+  await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 50)))
+  if (activeCleanup !== cleanup) return // a newer print request replaced this one
   window.addEventListener('afterprint', cleanup)
   window.print()
   // Safari/Firefox may not fire afterprint reliably

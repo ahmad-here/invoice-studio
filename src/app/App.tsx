@@ -1,5 +1,5 @@
 import { lazy, useEffect } from 'react'
-import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Spinner } from '@/components/common/ui'
 import { useApp } from './store'
@@ -18,6 +18,12 @@ const Contact = lazy(() => import('@/features/content/ContactPage'))
 const Privacy = lazy(() => import('@/features/content/PrivacyPage'))
 const DownloadApp = lazy(() => import('@/features/content/DownloadPage'))
 
+/** A fresh editor per URL: unsaved work is flushed on unmount into the right draft slot. */
+function EditorRoute() {
+  const { pathname } = useLocation()
+  return <Editor key={pathname} />
+}
+
 /** Old hash links (#/create) → clean paths, so bookmarks from earlier versions keep working. */
 function redirectHash() {
   if (location.hash.startsWith('#/')) history.replaceState(null, '', location.hash.slice(1))
@@ -33,8 +39,8 @@ export function App() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route index element={<Dashboard />} />
-          <Route path="create" element={<Editor />} />
-          <Route path="edit/:id" element={<Editor />} />
+          <Route path="create" element={<EditorRoute />} />
+          <Route path="edit/:id" element={<EditorRoute />} />
           <Route path="templates" element={<Templates />} />
           <Route path="bulk" element={<Bulk />} />
           <Route path="invoices" element={<Saved />} />

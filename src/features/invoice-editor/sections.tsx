@@ -1,35 +1,24 @@
-import { memo, useCallback, useRef, useState, type ReactNode } from 'react'
-import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, ImagePlus, Plus, Trash2, GripVertical, X, Check } from 'lucide-react'
-import type { BusinessProfile, CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals, Logo, LogoPosition } from '@/types/invoice'
+import { memo, useCallback, useRef, useState } from 'react'
+import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, Plus, Trash2, GripVertical, X, Check } from 'lucide-react'
+import type { BusinessProfile, CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals } from '@/types/invoice'
 import { Button, Input, Segmented, Select, Switch, Textarea, cx, Badge } from '@/components/common/ui'
 import { MoneyInput, NumberInput } from '@/components/forms/inputs'
 import { CURRENCIES, formatMoney, convertMinorPrecision, currencyDecimals } from '@/lib/money'
 import { newItem } from '@/lib/defaults'
 import { uid } from '@/lib/sanitize'
 import { addDays, parseISO } from '@/lib/dates'
-import { processLogo } from '@/lib/image'
 import { TEMPLATES } from '@/templates/registry'
 import { TemplateThumb } from '@/components/invoice/TemplateThumb'
 import { toast } from '@/app/store'
+import { Section } from '@/components/common/Section'
+import { LogoEditor } from '@/components/forms/LogoEditor'
+
+export { Section, LogoEditor }
 import { sampleInvoice } from '@/lib/sample'
 
 export type Update = (patch: Partial<Invoice> | ((inv: Invoice) => Partial<Invoice>)) => void
 interface P { inv: Invoice; update: Update }
 
-export function Section({ title, description, children, aside }: { title: string; description?: string; children: ReactNode; aside?: ReactNode }) {
-  return (
-    <section className="rounded-xl border border-line bg-white p-4 sm:p-5 shadow-xs">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
-          {description && <p className="mt-0.5 text-[13px] text-muted">{description}</p>}
-        </div>
-        {aside}
-      </div>
-      {children}
-    </section>
-  )
-}
 
 const STATUS: { v: InvoiceStatus; l: string }[] = [
   { v: 'draft', l: 'Draft' }, { v: 'sent', l: 'Sent / unpaid' }, { v: 'paid', l: 'Paid' }, { v: 'overdue', l: 'Overdue' }, { v: 'cancelled', l: 'Cancelled' },
@@ -81,49 +70,6 @@ export const DetailsSection = memo(function DetailsSection({ inv, update, number
 })
 
 /* ------------------------------ Business ------------------------------ */
-export function LogoEditor({ logo, onChange }: { logo?: Logo; onChange: (l: Logo | undefined) => void }) {
-  const ref = useRef<HTMLInputElement>(null)
-  const [busy, setBusy] = useState(false)
-  const pick = async (f?: File) => {
-    if (!f) return
-    setBusy(true)
-    try { onChange(await processLogo(f, logo)) } catch (e) { toast.error((e as Error).message) } finally { setBusy(false); if (ref.current) ref.current.value = '' }
-  }
-  return (
-    <div>
-      <span className="mb-1.5 block text-[13px] font-medium text-ink">Logo</span>
-      <input ref={ref} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="sr-only" aria-label="Upload logo" onChange={(e) => pick(e.target.files?.[0])} />
-      {!logo ? (
-        <button type="button" onClick={() => ref.current?.click()} disabled={busy}
-          onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); pick(e.dataTransfer.files[0]) }}
-          className="flex w-full items-center gap-3 rounded-lg border border-dashed border-line-strong bg-canvas px-4 py-4 text-left hover:border-primary hover:bg-primary-50 transition-colors">
-          <ImagePlus className="size-6 text-primary shrink-0" />
-          <span><span className="block text-sm font-medium text-ink">{busy ? 'Processing…' : 'Upload logo'}</span><span className="block text-xs text-muted">PNG, JPG, SVG or WebP · max 2 MB</span></span>
-        </button>
-      ) : (
-        <div className="rounded-lg border border-line p-3 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-16 w-28 items-center justify-center rounded-md bg-canvas p-1.5"><img src={logo.dataUrl} alt="Logo preview" className="max-h-full max-w-full object-contain" /></div>
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" onClick={() => ref.current?.click()} loading={busy}>Replace</Button>
-              <Button size="sm" variant="danger-ghost" icon={<Trash2 className="size-4" />} onClick={() => onChange(undefined)}>Remove</Button>
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 flex justify-between text-[13px] font-medium" htmlFor="logo-size"><span>Size</span><span className="text-muted tabular">{logo.size}px</span></label>
-              <input id="logo-size" type="range" min={40} max={260} step={4} value={logo.size} onChange={(e) => onChange({ ...logo, size: Number(e.target.value) })} className="w-full accent-[var(--color-primary)]" />
-            </div>
-            <div>
-              <span className="mb-1.5 block text-[13px] font-medium">Position</span>
-              <Segmented<LogoPosition> label="Logo position" size="sm" value={logo.position} onChange={(position) => onChange({ ...logo, position })} options={[{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]} />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 export const BusinessSection = memo(function BusinessSection({ inv, update, profiles, onSaveProfile }: P & { profiles: BusinessProfile[]; onSaveProfile: (asNew: boolean) => void }) {
   const b = inv.business

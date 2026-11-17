@@ -29,7 +29,7 @@ const creative: TemplateDef = {
       </div>
       <div className="mt-7 flex flex-wrap gap-x-8 gap-y-3">
         {metaRows(ctx, { number: false }).map(([k, v]) => (
-          <div key={k} className="min-w-0 max-w-[45%]"><div className="text-[10px] font-bold uppercase tracking-wide text-[#6b7280]">{k}</div><div className="font-semibold break-words whitespace-pre-line">{v}</div></div>
+          <div key={k} className="min-w-0 max-w-[45%]"><div className="text-[10px] font-bold uppercase tracking-wide text-[#6b7280]">{k}</div><div className="font-semibold [overflow-wrap:anywhere] whitespace-pre-line">{v}</div></div>
         ))}
       </div>
     </div>

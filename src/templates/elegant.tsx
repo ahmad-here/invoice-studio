@@ -17,7 +17,7 @@ const elegant: TemplateDef = {
           <div className="font-serif text-[22px] text-[var(--accent)]">{ctx.inv.business.name}</div>
           <BusinessLines ctx={ctx} showName={false} className="text-[10.5px] text-[#6b7280] mt-1" />
         </div>
-        <div className="text-right shrink-0">
+        <div className="text-right min-w-0 max-w-[55%]">
           <div className="font-serif text-[40px] leading-none text-[var(--accent)]">{ctx.inv.title || 'Invoice'}</div>
           <div className="mt-3"><MetaTable rows={metaRows(ctx, { custom: false })} className="ml-auto" labelClass="text-[#6b7280] text-left" valueClass="text-right text-[#202938] font-medium" /></div>
         </div>

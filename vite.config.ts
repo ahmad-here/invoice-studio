@@ -28,7 +28,7 @@ export default defineConfig({
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,woff2}'], globIgnores: ['**/html2canvas*', '**/purify.es*', '**/index.es-*', '**/downloads/**'], maximumFileSizeToCacheInBytes: 1_500_000, navigateFallback: '/app.html', navigateFallbackDenylist: [/^\/downloads\//, /\.(xml|txt|apk)$/] },
+      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,woff2}'], globIgnores: ['**/html2canvas*', '**/purify.es*', '**/index.es-*', '**/downloads/**'], maximumFileSizeToCacheInBytes: 1_500_000, navigateFallback: '/app.html', additionalManifestEntries: [{ url: '/app.html', revision: String(Date.now()) }], navigateFallbackDenylist: [/^\/downloads\//, /\.(xml|txt|apk)$/] },
     }),
   ],
   test: { environment: 'jsdom', include: ['tests/unit/**/*.test.ts?(x)'], setupFiles: ['tests/setup.ts'] },

@@ -1,0 +1,22 @@
+{
+  "prerender": [
+    "/",
+    "/features",
+    "/how-to-use",
+    "/faq",
+    "/support",
+    "/contact",
+    "/privacy",
+    "/download",
+    "/templates",
+    "/bulk"
+  ],
+  "sitemapOnly": [
+    "/create"
+  ],
+  "disallow": [
+    "/edit/",
+    "/invoices",
+    "/settings"
+  ]
+}

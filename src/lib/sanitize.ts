@@ -27,6 +27,9 @@ export function safeUrl(url: string): string | null {
   }
 }
 
+/** Only raster data URLs are ever stored for logos (SVG is rasterised on upload). */
+export const LOGO_DATA_URL = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/
+
 export const uid = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()

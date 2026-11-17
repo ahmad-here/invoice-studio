@@ -5,7 +5,7 @@ import { Copy, Download, FileText, MoreHorizontal, Printer, Search, Trash2 } fro
 import type { Invoice, InvoiceStatus } from '@/types/invoice'
 import { useApp, toast } from '@/app/store'
 import { Button, Card, ConfirmDialog, EmptyState, Input, PageHeader, Select } from '@/components/common/ui'
-import { InvoiceListItem } from './InvoiceListItem'
+import { InvoiceListItem } from '@/components/invoice/InvoiceListItem'
 import { useInvoiceActions, duplicateInvoice } from '@/hooks/useInvoiceActions'
 import { isOverdue } from '@/lib/dates'
 import { calculateTotals } from '@/lib/calc'

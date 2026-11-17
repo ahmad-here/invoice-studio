@@ -6,8 +6,10 @@ import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const SITE_URL = (process.env.VITE_SITE_URL || 'https://invoicestudio.app').replace(/\/$/, '')
-const ROUTES = ['/', '/features', '/how-to-use', '/faq', '/support', '/contact', '/privacy', '/download', '/templates', '/bulk']
-const SITEMAP = [...ROUTES, '/create']
+import { readFileSync } from 'node:fs'
+const PUBLIC = JSON.parse(readFileSync('src/app/public-routes.json', 'utf8'))
+const ROUTES = PUBLIC.prerender
+const SITEMAP = [...ROUTES, ...PUBLIC.sitemapOnly]
 
 // Keep the untouched SPA shell for app routes (/create, /edit/*, /invoices, /settings) and offline fallback
 copyFileSync('dist/index.html', 'dist/app.html')
@@ -45,9 +47,7 @@ ${SITEMAP.map((r) => `  <url><loc>${SITE_URL}${r === '/' ? '/' : r}</loc><lastmo
 `)
 writeFileSync('dist/robots.txt', `User-agent: *
 Allow: /
-Disallow: /edit/
-Disallow: /invoices
-Disallow: /settings
+${PUBLIC.disallow.map((p) => `Disallow: ${p}`).join('\n')}
 
 Sitemap: ${SITE_URL}/sitemap.xml
 `)

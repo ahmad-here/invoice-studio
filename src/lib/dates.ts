@@ -54,6 +54,14 @@ export function formatDate(iso: string, fmt: DateFormat = 'D MMM YYYY', locale =
   }
 }
 
+/** Keep the issue→due gap when an invoice is re-issued on `newIssue` (default today). */
+export function shiftDueDate(issue: string, due: string, newIssue = todayISO()): string {
+  const a = parseISO(issue), b = parseISO(due)
+  if (!b) return ''
+  const gap = a ? Math.max(0, Math.round((b.getTime() - a.getTime()) / 86_400_000)) : 0
+  return addDays(newIssue, gap)
+}
+
 /** Overdue = past due date and not paid/cancelled/draft. */
 export function isOverdue(dueISO: string, status: string, today = todayISO()): boolean {
   return !!dueISO && dueISO < today && (status === 'sent' || status === 'overdue')

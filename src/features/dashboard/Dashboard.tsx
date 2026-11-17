@@ -8,7 +8,7 @@ import { Button, Card, EmptyState } from '@/components/common/ui'
 import { TEMPLATES } from '@/templates/registry'
 import { TemplateThumb } from '@/components/invoice/TemplateThumb'
 import { sampleInvoice } from '@/lib/sample'
-import { InvoiceListItem } from '@/features/saved-invoices/InvoiceListItem'
+import { InvoiceListItem } from '@/components/invoice/InvoiceListItem'
 import { todayISO } from '@/lib/dates'
 
 export default function Dashboard() {
@@ -29,7 +29,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-10">
-      <section className="rounded-2xl border border-line bg-white px-6 py-10 sm:px-10 sm:py-12 shadow-xs">
+      <section className="grid items-center gap-8 overflow-hidden rounded-2xl border border-line bg-white px-6 py-10 shadow-xs sm:px-10 sm:py-12 lg:grid-cols-[1.15fr_1fr]">
         <div className="max-w-2xl">
           <p className="text-[13px] font-semibold text-primary">Free invoice generator · No sign-up</p>
           <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">Professional invoices in minutes.</h1>
@@ -45,16 +45,20 @@ export default function Dashboard() {
             <li className="flex items-center gap-1.5"><Zap className="size-4 text-primary" />Accurate tax & discount maths</li>
           </ul>
         </div>
+        <div aria-hidden className="relative hidden h-[340px] lg:block">
+          <div className="absolute right-6 top-2 w-[250px] rotate-[4deg] overflow-hidden rounded-lg border border-line shadow-lg"><TemplateThumb invoice={gallery[2].inv} /></div>
+          <div className="absolute right-[150px] top-10 w-[250px] -rotate-[5deg] overflow-hidden rounded-lg border border-line shadow-xl"><TemplateThumb invoice={gallery[0].inv} /></div>
+        </div>
       </section>
 
-      <section aria-label="Statistics" className="grid grid-cols-3 gap-3 sm:gap-4">
+      {invoices.length > 0 && <section aria-label="Statistics" className="grid grid-cols-3 gap-3 sm:gap-4">
         {[{ k: 'Invoices created', v: stats.total }, { k: 'This month', v: stats.month }, { k: 'Drafts', v: stats.drafts }].map((s) => (
           <Card key={s.k} className="px-4 py-4 sm:px-5">
             <div className="text-2xl font-semibold tabular text-ink sm:text-3xl">{s.v}</div>
             <div className="mt-0.5 text-xs text-muted sm:text-[13px]">{s.k}</div>
           </Card>
         ))}
-      </section>
+      </section>}
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <section>
@@ -73,7 +77,7 @@ export default function Dashboard() {
         <section>
           <h2 className="mb-3 text-lg font-semibold">Drafts</h2>
           <Card>
-            {drafts.length === 0 ? <p className="px-5 py-8 text-center text-sm text-muted">No drafts. Use “Save draft” in the editor to finish an invoice later.</p>
+            {drafts.length === 0 ? <EmptyState icon={<FilePlus2 className="size-7" />} title="No drafts" description="Use “Save as draft” in the editor to finish an invoice later." />
               : <ul className="divide-y divide-line">{drafts.map((i) => <InvoiceListItem key={i.id} inv={i} compact />)}</ul>}
           </Card>
         </section>

@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { SCHEMA_VERSION, type Invoice, type UserPreferences, type BusinessProfile } from '@/types/invoice'
 import { CURRENCY_CODES } from './money'
 import { createInvoice, defaultPreferences, emptyBusiness, emptyCustomer } from './defaults'
-import { uid } from './sanitize'
+import { LOGO_DATA_URL, uid } from './sanitize'
 
 const str = (max = 5000) => z.string().max(max).catch('')
 const num = z.number().finite().catch(0)
@@ -19,7 +19,7 @@ const customField = z.object({
 })
 // SVG data URLs are rasterised on upload; only raster data URLs are accepted from backups.
 const logo = z.object({
-  dataUrl: z.string().max(3_000_000).regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/),
+  dataUrl: z.string().max(3_000_000).regex(LOGO_DATA_URL),
   width: num, height: num, size: num,
   position: z.enum(['left', 'center', 'right']).catch('left'),
 }).optional().catch(undefined)

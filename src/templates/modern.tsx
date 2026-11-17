@@ -15,7 +15,7 @@ const modern: TemplateDef = {
           <Logo ctx={ctx} max={48} />
           <div className="text-[16px] font-bold truncate">{ctx.inv.business.name}</div>
         </div>
-        <div className="text-[11px] text-[#6b7280] shrink-0">{ctx.inv.title || 'Invoice'} <b className="text-[#202938]">{ctx.inv.number}</b></div>
+        <div className="text-[11px] text-[#6b7280] min-w-0 max-w-[55%] text-right [overflow-wrap:anywhere]">{ctx.inv.title || 'Invoice'} <b className="text-[#202938]">{ctx.inv.number}</b></div>
       </div>
       <div className="mt-6 rounded-2xl bg-[#EAF5FF] p-6 grid grid-cols-[1fr_1fr_auto] gap-6">
         <div className="min-w-0">
@@ -24,7 +24,7 @@ const modern: TemplateDef = {
           {hasShipping(ctx) && <><div className="text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] mt-2 mb-0.5">Ship to</div><ShipTo ctx={ctx} /></>}
         </div>
         <div className="min-w-0 space-y-1.5">
-          {metaRows(ctx, { number: false }).map(([k, v]) => <div key={k}><span className="text-[#6b7280]">{k}: </span><span className="font-semibold break-words whitespace-pre-line">{v}</span></div>)}
+          {metaRows(ctx, { number: false }).map(([k, v]) => <div key={k}><span className="text-[#6b7280]">{k}: </span><span className="font-semibold [overflow-wrap:anywhere] whitespace-pre-line">{v}</span></div>)}
         </div>
         <div className="rounded-xl bg-white px-5 py-4 text-right shadow-[0_1px_3px_rgba(0,0,0,0.08)] self-start min-w-[170px]">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-[#6b7280]">Amount due</div>

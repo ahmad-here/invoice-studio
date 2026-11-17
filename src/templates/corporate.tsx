@@ -16,7 +16,7 @@ const corporate: TemplateDef = {
           <div className="text-[18px] font-bold">{ctx.inv.business.name}</div>
           <BusinessLines ctx={ctx} showName={false} className="text-[11px] text-[var(--on-accent)]" />
         </div>
-        <div className="text-right shrink-0">
+        <div className="text-right min-w-0 max-w-[55%]">
           <div className="text-[34px] font-extrabold uppercase leading-none tracking-wide">{ctx.inv.title || 'Invoice'}</div>
           <div className="mt-2 text-[13px] text-[var(--on-accent)]">No. {ctx.inv.number}</div>
         </div>
@@ -31,7 +31,7 @@ const corporate: TemplateDef = {
         </div>
         <div className="rounded-md bg-[#EAF5FF] p-3">
           {metaRows(ctx, { number: false }).map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-3 py-0.5"><span className="text-[#6b7280]">{k}</span><span className="font-semibold text-[#202938] text-right break-words min-w-0 whitespace-pre-line">{v}</span></div>
+            <div key={k} className="flex justify-between gap-3 py-0.5"><span className="text-[#6b7280]">{k}</span><span className="font-semibold text-[#202938] text-right [overflow-wrap:anywhere] min-w-0 whitespace-pre-line">{v}</span></div>
           ))}
         </div>
       </div>

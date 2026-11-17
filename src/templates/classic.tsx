@@ -16,7 +16,7 @@ const classic: TemplateDef = {
           {logoAlign(ctx) === 'left' && <div className="mb-3"><Logo ctx={ctx} /></div>}
           <BusinessLines ctx={ctx} nameClass="text-[16px] font-bold mb-0.5" className="text-[11.5px] text-[#4b5563]" />
         </div>
-        <div className="text-right shrink-0">
+        <div className="text-right min-w-0 max-w-[55%]">
           {logoAlign(ctx) === 'right' && <div className="flex justify-end mb-3"><Logo ctx={ctx} /></div>}
           <div className="text-[30px] font-bold tracking-[0.06em] uppercase leading-none">{ctx.inv.title || 'Invoice'}</div>
           <div className="mt-2 text-[13px] font-semibold">{ctx.inv.number}</div>
@@ -38,7 +38,7 @@ const classic: TemplateDef = {
     </div>
   ),
   ContHeader: ({ ctx, page }) => (
-    <div className="flex justify-between border-b pb-2 mb-4 text-[11px] text-[#6b7280]"><span className="font-semibold text-[#202938]">{ctx.inv.business.name}</span><span>{ctx.inv.number} · continued (page {page})</span></div>
+    <div className="flex justify-between border-b pb-2 mb-4 text-[11px] text-[#6b7280]"><span className="min-w-0 truncate font-semibold text-[#202938]">{ctx.inv.business.name}</span><span className="shrink-0">{ctx.inv.number} · continued (page {page})</span></div>
   ),
   columns: (ctx) => standardColumns(ctx),
   table: {

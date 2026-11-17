@@ -3,7 +3,8 @@ import { Building2, Check, Plus, Star, Trash2 } from 'lucide-react'
 import type { BusinessProfile } from '@/types/invoice'
 import { useApp, toast } from '@/app/store'
 import { Badge, Button, ConfirmDialog, Input, Textarea, cx } from '@/components/common/ui'
-import { LogoEditor, Section } from '@/features/invoice-editor/sections'
+import { Section } from '@/components/common/Section'
+import { LogoEditor } from '@/components/forms/LogoEditor'
 import { emptyBusiness } from '@/lib/defaults'
 
 /** Manage several business profiles; one is the default for new invoices. */

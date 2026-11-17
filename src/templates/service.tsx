@@ -17,7 +17,7 @@ const service: TemplateDef = {
             <div className="flex mb-3" style={{ justifyContent: justify(logoAlign(ctx) === 'right' ? 'left' : logoAlign(ctx)) }}><Logo ctx={ctx} max={64} /></div>
             <BusinessLines ctx={ctx} nameClass="text-[15px] font-bold" className="text-[11px] text-[#4b5563]" />
           </div>
-          <div className="text-right shrink-0">
+          <div className="text-right min-w-0 max-w-[55%]">
             <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6b7280]">{ctx.inv.title || 'Invoice'}</div>
             <div className="text-[22px] font-bold">{ctx.inv.number}</div>
             <div className="mt-3 text-[11px] text-[#6b7280]">Amount due</div>
@@ -34,7 +34,7 @@ const service: TemplateDef = {
             <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[#6b7280] mb-2">Project details</div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               {[...metaRows(ctx, { number: false, custom: false }), ...fields.map((f) => [f.label, fieldValue(f, ctx)] as [string, string])].map(([k, v]) => (
-                <div key={k} className="min-w-0"><div className="text-[10px] text-[#6b7280]">{k}</div><div className="font-semibold break-words whitespace-pre-line">{v}</div></div>
+                <div key={k} className="min-w-0"><div className="text-[10px] text-[#6b7280]">{k}</div><div className="font-semibold [overflow-wrap:anywhere] whitespace-pre-line">{v}</div></div>
               ))}
             </div>
           </div>
@@ -45,7 +45,7 @@ const service: TemplateDef = {
   ContHeader: ({ ctx, page }) => <div className="mb-4 text-[11px] text-[#6b7280] flex justify-between"><b className="text-[#202938]">{ctx.inv.number}</b><span>Page {page}</span></div>,
   columns: (ctx) => [
     { key: 'item', label: 'Service', render: (it) => (
-      <div className="break-words">
+      <div className="[overflow-wrap:anywhere]">
         <div className="font-semibold text-[12.5px]">{it.name || ' '}</div>
         {it.description && <div className="whitespace-pre-line text-[#4b5563] mt-0.5">{it.description}</div>}
       </div>

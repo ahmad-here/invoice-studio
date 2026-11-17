@@ -3,7 +3,7 @@ import type { Invoice } from '@/types/invoice'
 import { toast, useApp } from '@/app/store'
 import { saveFile } from '@/services/files'
 import { uid } from '@/lib/sanitize'
-import { addDays, parseISO, todayISO } from '@/lib/dates'
+import { shiftDueDate, todayISO } from '@/lib/dates'
 
 /** PDF download / print / duplicate with loading state and user feedback. */
 export function useInvoiceActions() {
@@ -47,12 +47,7 @@ export function duplicateInvoice(inv: Invoice, number: string): Invoice {
     status: 'draft',
     amountPaid: 0,
     issueDate: todayISO(),
-    dueDate: (() => {
-      const a = parseISO(inv.issueDate), b = parseISO(inv.dueDate)
-      if (!b) return ''
-      const gap = a ? Math.max(0, Math.round((b.getTime() - a.getTime()) / 86_400_000)) : 0
-      return addDays(todayISO(), gap)
-    })(),
+    dueDate: shiftDueDate(inv.issueDate, inv.dueDate),
     items: inv.items.map((i) => ({ ...i, id: uid() })),
     createdAt: now,
     updatedAt: now,

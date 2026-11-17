@@ -105,9 +105,10 @@ export default function EditorPage() {
   const warned = useRef(false)
   useEffect(() => {
     if (!inv || !dirty) return
+    const slot = draftKey
     const write = () => {
       pending.current = null
-      storage.saveEditorDraft(draftKey, inv).catch((e) => {
+      storage.saveEditorDraft(slot, inv).catch((e) => {
         if (!warned.current) { warned.current = true; toast.error(`Autosave failed (${(e as Error).message}). Save your invoice to keep changes.`) }
       })
     }
@@ -214,9 +215,9 @@ export default function EditorPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="md" variant="ghost" icon={<FilePlus2 className="size-4" />} onClick={() => (dirty ? setConfirmNew(true) : startNew())}>New</Button>
-          <Button icon={<Printer className="size-4" />} loading={busy === `print:${inv.id}`} onClick={() => print(inv)}>Print</Button>
-          <Button icon={<Download className="size-4" />} loading={busy === `pdf:${inv.id}`} onClick={() => downloadPdf(inv)}>PDF</Button>
-          <Button onClick={() => save(true)} loading={saving} title="Save without validation to finish later">Save as draft</Button>
+          <Button icon={<Printer className="size-4" />} loading={busy === `print:${inv.id}`} onClick={() => print(inv)} aria-label="Print">Print</Button>
+          <Button icon={<Download className="size-4" />} loading={busy === `pdf:${inv.id}`} onClick={() => downloadPdf(inv)} aria-label="Download PDF">PDF</Button>
+          <Button onClick={() => save(true)} loading={saving} title="Save without validation to finish later" className="hidden lg:inline-flex">Save as draft</Button>
           <Button variant="primary" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving} className="hidden lg:inline-flex">Save invoice</Button>
         </div>
       </div>
@@ -243,12 +244,12 @@ export default function EditorPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         <div className={cx('min-w-0', mobileView === 'preview' && 'hidden lg:block')}>
-          <div role="tablist" aria-label="Invoice sections" onKeyDown={onTabKey} className="sticky top-16 z-20 -mx-4 mb-4 flex gap-1 overflow-x-auto bg-canvas/95 px-4 py-2 backdrop-blur scrollbar-thin [mask-image:linear-gradient(to_right,black_88%,transparent)] sm:mx-0 sm:rounded-xl sm:border sm:border-line sm:bg-white sm:p-1 sm:[mask-image:none]">
+          <div role="tablist" aria-label="Invoice sections" onKeyDown={onTabKey} className="sticky top-16 z-20 -mx-4 mb-4 flex snap-x gap-1 overflow-x-auto bg-canvas/95 px-4 py-2 backdrop-blur scrollbar-thin [mask-image:linear-gradient(to_right,black_88%,transparent)] sm:mx-0 sm:rounded-xl sm:border sm:border-line sm:bg-white sm:p-1 sm:[mask-image:none]">
             {TABS.map((t) => {
               const hasErr = errors.some((e) => tabForError(e) === t.id)
               return (
-                <button key={t.id} role="tab" aria-selected={tab === t.id} tabIndex={tab === t.id ? 0 : -1} aria-controls={`panel-${t.id}`} id={`tab-${t.id}`} onClick={() => setTab(t.id)}
-                  className={cx('flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors', tab === t.id ? 'bg-primary text-white shadow-xs' : 'text-muted hover:bg-canvas hover:text-ink')}>
+                <button key={t.id} role="tab" aria-selected={tab === t.id} tabIndex={tab === t.id ? 0 : -1} aria-controls={`panel-${t.id}`} id={`tab-${t.id}`} onClick={(e) => { setTab(t.id); e.currentTarget.scrollIntoView({ inline: 'nearest', block: 'nearest' }) }}
+                  className={cx('flex shrink-0 snap-start items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors sm:px-3.5 sm:text-sm', tab === t.id ? 'bg-primary text-white shadow-xs' : 'text-muted hover:bg-canvas hover:text-ink')}>
                   {t.label}{hasErr && <span className="size-1.5 rounded-full bg-danger" aria-label="has errors" />}
                 </button>
               )
@@ -278,7 +279,7 @@ export default function EditorPage() {
             {tab === 'design' && <DesignSection inv={inv} update={update} />}
           </div>
           <div className="mt-4 flex justify-between">
-            <Button variant="ghost" disabled={tab === TABS[0].id} onClick={() => setTab(TABS[TABS.findIndex((t) => t.id === tab) - 1].id)}>Back</Button>
+            {tab !== TABS[0].id ? <Button variant="ghost" onClick={() => setTab(TABS[TABS.findIndex((t) => t.id === tab) - 1].id)}>Back</Button> : <span />}
             {tab !== 'design'
               ? <Button variant="secondary" onClick={() => setTab(TABS[TABS.findIndex((t) => t.id === tab) + 1].id)}>Next: {TABS[TABS.findIndex((t) => t.id === tab) + 1].label}</Button>
               : <Button variant="primary" onClick={() => save(false)} loading={saving}>Save invoice</Button>}
@@ -297,6 +298,7 @@ export default function EditorPage() {
       {/* Mobile sticky action bar: total + primary save always reachable */}
       <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t border-line bg-white px-4 py-2 shadow-[0_-4px_12px_rgb(16_24_40/0.06)] lg:hidden">
         <div className="min-w-0 flex-1"><div className="text-[11px] text-muted">Total</div><div className="truncate text-[15px] font-semibold tabular">{formatMoney(totals.grandTotal, inv.currency)}</div></div>
+        <Button variant="ghost" size="sm" onClick={() => save(true)} loading={saving}>Draft</Button>
         <Button variant="primary" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving}>Save invoice</Button>
       </div>
 

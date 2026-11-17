@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Sparkles, X } from 'lucide-react'
 import { Button } from '@/components/common/ui'
+import { LS } from '@/lib/storageKeys'
 
-const KEY = 'invoice-studio:tour-done'
+const KEY = LS.tourDone
 const EVT = 'invoice-studio:start-tour'
 
 interface Step { target?: string; title: string; body: string }

@@ -13,8 +13,9 @@
     "e2e": "playwright test",
     "cap:sync": "npm run build:app && node -e \"require('fs').rmSync('dist/downloads',{recursive:true,force:true})\" && npx cap sync android",
     "android:open": "npx cap open android",
-    "android:debug": "npm run cap:sync && cd android && gradlew assembleDebug",
-    "build:app": "tsc -b && vite build"
+    "android:debug": "npm run cap:sync && node scripts/android-build.mjs assembleDebug",
+    "build:app": "tsc -b && vite build",
+    "android:release": "npm run cap:sync && node scripts/android-build.mjs assembleRelease"
   },
   "dependencies": {
     "@capacitor/core": "^8.6.2",

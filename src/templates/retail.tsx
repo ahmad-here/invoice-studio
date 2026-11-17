@@ -17,16 +17,16 @@ const retail: TemplateDef = {
         <div className="flex mb-3" style={{ justifyContent: justify(logoAlign(ctx)) }}><Logo ctx={ctx} max={60} /></div>
         <div className="flex justify-between items-end gap-6 pb-3 border-b border-[#202938]">
           <BusinessLines ctx={ctx} nameClass="text-[17px] font-extrabold uppercase tracking-wide" className="text-[10.5px] text-[#4b5563] min-w-0" />
-          <div className="text-right shrink-0">
+          <div className="text-right min-w-0 max-w-[55%]">
             <div className="inline-block px-3 py-1 text-[var(--on-accent)] text-[13px] font-bold uppercase tracking-[0.1em]" style={{ background: ctx.accent }}>{ctx.inv.title || 'Sales invoice'}</div>
             <div className="mt-2 font-mono text-[12px]">{ctx.inv.number}</div>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-0 mt-4 border border-[#d1d5db]">
           <div className="p-3 min-w-0"><div className="text-[9.5px] font-bold uppercase text-[#6b7280] mb-1">Sold to</div><CustomerLines ctx={ctx} nameClass="font-bold" /></div>
-          <div className="p-3 border-l border-[#d1d5db] min-w-0"><div className="text-[9.5px] font-bold uppercase text-[#6b7280] mb-1">Ship to</div><div className="whitespace-pre-line break-words">{ship || 'Same as billing'}</div></div>
+          <div className="p-3 border-l border-[#d1d5db] min-w-0"><div className="text-[9.5px] font-bold uppercase text-[#6b7280] mb-1">Ship to</div><div className="whitespace-pre-line [overflow-wrap:anywhere]">{ship || 'Same as billing'}</div></div>
           <div className="p-3 border-l border-[#d1d5db] bg-[#F7F9FC] min-w-0">
-            {metaRows(ctx, { number: false }).map(([k, v]) => <div key={k} className="flex justify-between gap-2"><span className="text-[#6b7280]">{k}</span><span className="font-semibold text-right break-words min-w-0">{v}</span></div>)}
+            {metaRows(ctx, { number: false }).map(([k, v]) => <div key={k} className="flex justify-between gap-2"><span className="text-[#6b7280]">{k}</span><span className="font-semibold text-right [overflow-wrap:anywhere] min-w-0">{v}</span></div>)}
           </div>
         </div>
       </div>
@@ -34,8 +34,8 @@ const retail: TemplateDef = {
   },
   ContHeader: ({ ctx, page }) => <div className="mb-3 flex justify-between font-mono text-[10px] text-[#6b7280]"><span>{ctx.inv.number}</span><span>PAGE {page}</span></div>,
   columns: (ctx) => [
-    { key: 'sku', label: 'SKU', width: '12%', render: (it) => <span className="font-mono text-[10px] break-all">{it.sku || '—'}</span> },
-    { key: 'item', label: 'Product', render: (it) => <div className="break-words"><div className="font-semibold">{it.name || ' '}</div>{it.description && <div className="text-[10px] text-[#6b7280] whitespace-pre-line">{it.description}</div>}</div> },
+    { key: 'sku', label: 'SKU', width: '12%', render: (it) => <span className="font-mono text-[10px] [overflow-wrap:anywhere]">{it.sku || '—'}</span> },
+    { key: 'item', label: 'Product', render: (it) => <div className="[overflow-wrap:anywhere]"><div className="font-semibold">{it.name || ' '}</div>{it.description && <div className="text-[10px] text-[#6b7280] whitespace-pre-line">{it.description}</div>}</div> },
     { key: 'qty', label: 'Qty', align: 'right', width: '9%', render: (it) => qtyText(ctx, it) },
     { key: 'price', label: 'Unit price', align: 'right', width: '13%', render: (it) => ctx.money(it.unitPrice) },
     { key: 'disc', label: 'Discount', align: 'right', width: '10%', render: (it, l) => discountText(ctx, it, l) },
