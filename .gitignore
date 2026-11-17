@@ -6,3 +6,4 @@ android/.gradle
 test-results
 playwright-report
 *.keystore
+apk-build.log
