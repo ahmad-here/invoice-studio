@@ -1,0 +1,75 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/source-serif-4';
+
+/* Design tokens — palette from the brief, scale per Refactoring UI (docs/design-principles.md) */
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Source Serif 4 Variable', Georgia, 'Times New Roman', serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  --color-primary: #0692f4;
+  --color-primary-600: #0577c8;
+  --color-primary-700: #065d9b;
+  --color-primary-50: #eaf5ff;
+  --color-primary-100: #d4ebff;
+  --color-danger: #bb2631;
+  --color-danger-700: #961e27;
+  --color-danger-50: #fcecee;
+  --color-success: #15803d;
+  --color-success-50: #ecfdf3;
+  --color-warning: #b45309;
+  --color-warning-50: #fff7e6;
+  --color-ink: #202938;
+  --color-muted: #6b7280;
+  --color-subtle: #9ca3af;
+  --color-neutral: #6b6b6b;
+  --color-line: #e5e7eb;
+  --color-line-strong: #d1d5db;
+  --color-canvas: #f7f9fc;
+  --color-surface: #ffffff;
+
+  --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow-sm: 0 1px 3px rgb(16 24 40 / 0.08), 0 1px 2px rgb(16 24 40 / 0.04);
+  --shadow-md: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.04);
+  --shadow-lg: 0 12px 24px -6px rgb(16 24 40 / 0.12), 0 4px 8px -4px rgb(16 24 40 / 0.05);
+  --shadow-xl: 0 24px 48px -12px rgb(16 24 40 / 0.18);
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  button, [role='button'] { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  input[type='number']::-webkit-inner-spin-button { opacity: 0.4; }
+}
+
+.tabular { font-variant-numeric: tabular-nums; }
+.invoice-page { box-sizing: border-box; }
+.invoice-page *, .invoice-page *::before, .invoice-page *::after { box-sizing: border-box; }
+.preview-page .invoice-page { box-shadow: var(--shadow-lg); }
+
+.scrollbar-thin { scrollbar-width: thin; }
+
+/* ------------------------------ Print ------------------------------ */
+/* Off-screen (not display:none) so the paginator can measure before printing */
+#print-root { position: fixed; left: -100000px; top: 0; pointer-events: none; }
+@media print {
+  html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+  body > *:not(#print-root) { display: none !important; }
+  #print-root { display: block !important; position: static !important; overflow: hidden; }
+  #print-root .invoice-pages { gap: 0 !important; display: block !important; }
+  #print-root .invoice-page {
+    box-shadow: none !important;
+    break-after: page;
+    page-break-after: always;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  #print-root .invoice-page:last-child { break-after: auto; page-break-after: auto; }
+}

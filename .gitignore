@@ -1,0 +1,8 @@
+node_modules
+dist
+dev-dist
+android/app/build
+android/.gradle
+test-results
+playwright-report
+*.keystore
