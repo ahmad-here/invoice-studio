@@ -33,7 +33,7 @@ export function BusinessProfiles() {
 
   return (
     <Section title="Business profiles" description="Add every business you invoice for, then pick one when creating an invoice." aside={
-      <Button size="sm" variant="primary" icon={<Plus className="size-4" />} onClick={() => setEditingId('new')} data-tour="add-business">Add business</Button>
+      <Button size="sm" variant="secondary" icon={<Plus className="size-4" />} onClick={() => setEditingId('new')} data-tour="add-business">Add business</Button>
     }>
       {businesses.length > 0 && (
         <ul className="mb-5 grid gap-2" aria-label="Business profiles">

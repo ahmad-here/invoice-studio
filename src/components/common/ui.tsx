@@ -21,6 +21,10 @@ const sizes: Record<Size, string> = {
   lg: 'h-12 px-5 text-[15px] gap-2 rounded-lg',
   icon: 'h-9 w-9 rounded-lg justify-center',
 }
+/** Classes for a link that should look like a button (avoids <a><button/></a>). */
+export const buttonClass = ({ variant = 'secondary', size = 'md' }: { variant?: Variant; size?: Size } = {}) =>
+  cx('inline-flex items-center font-medium whitespace-nowrap transition-colors select-none', variants[variant], sizes[size])
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> { variant?: Variant; size?: Size; loading?: boolean; icon?: ReactNode }
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button({ variant = 'secondary', size = 'md', loading, icon, className, children, disabled, type = 'button', ...rest }, ref) {
   return (

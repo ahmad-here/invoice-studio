@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Download, MonitorSmartphone, Smartphone } from 'lucide-react'
 import { ContentLayout, H2, UL } from './ContentLayout'
-import { Button, Card } from '@/components/common/ui'
+import { buttonClass, Card } from '@/components/common/ui'
 import { useSeo } from '@/hooks/useSeo'
 import { SITE } from '@/config/site'
 import { isNative } from '@/services/files'
@@ -26,7 +26,7 @@ export default function DownloadPage() {
             <h2 className="text-lg font-semibold">Android app (APK)</h2>
             <p className="mt-1 text-sm text-muted">Download and install the APK directly on your Android phone.</p>
             {apk === 'yes' ? (
-              <a href={SITE.apkUrl} download className="mt-4 inline-block"><Button variant="primary" icon={<Download className="size-4" />}>Download APK</Button></a>
+              <a href={SITE.apkUrl} download="invoice-studio.apk" className={`mt-4 ${buttonClass({ variant: 'primary' })}`}><Download className="size-4" aria-hidden />Download APK</a>
             ) : (
               <p className="mt-4 rounded-lg bg-canvas px-3 py-2 text-sm text-muted">{apk === 'checking' ? 'Checking availability…' : 'The APK isn’t published yet. Install the web app instead — it works the same way.'}</p>
             )}

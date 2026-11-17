@@ -19,7 +19,7 @@ const elegant: TemplateDef = {
         </div>
         <div className="text-right shrink-0">
           <div className="font-serif text-[40px] leading-none text-[var(--accent)]">{ctx.inv.title || 'Invoice'}</div>
-          <div className="mt-3"><MetaTable rows={metaRows(ctx, { custom: false })} className="ml-auto" labelClass="text-[#6b7280] text-left" valueClass="text-right text-[var(--accent)] font-medium" /></div>
+          <div className="mt-3"><MetaTable rows={metaRows(ctx, { custom: false })} className="ml-auto" labelClass="text-[#6b7280] text-left" valueClass="text-right text-[#202938] font-medium" /></div>
         </div>
       </div>
       <div className="mt-8 grid grid-cols-2 gap-8 border-t border-[#e5e7eb] pt-6">
@@ -49,7 +49,7 @@ const elegant: TemplateDef = {
     <div key="t" className="ml-auto w-[300px]">
       {totalsRows(ctx).map((r, i) => (
         <div key={i} className={cx('flex justify-between px-3 py-1.5', r.strong ? 'bg-[var(--accent)] text-[var(--on-accent)] font-semibold text-[13.5px]' : '', r.muted && 'text-[#6b7280]')}>
-          <span className={r.strong ? 'font-serif' : ''}>{r.label}</span><span className="tabular-nums">{r.value}</span>
+          <span className={r.strong ? 'font-serif' : ''}>{r.label}</span><span className="tabular-nums whitespace-nowrap">{r.value}</span>
         </div>
       ))}
     </div>,

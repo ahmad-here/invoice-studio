@@ -18,12 +18,12 @@ const creative: TemplateDef = {
       <div className="mt-2 text-[13px] text-[#6b7280]">#{ctx.inv.number}</div>
       <div className="grid grid-cols-2 gap-8 mt-8">
         <div className="min-w-0">
-          <div className="text-[11px] font-bold mb-1" style={{ color: ctx.accent }}>Hello,</div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-[#6b7280] mb-1">Billed to</div>
           <CustomerLines ctx={ctx} nameClass="text-[16px] font-bold" />
-          {hasShipping(ctx) && <div className="mt-2"><span className="text-[10px] font-bold uppercase text-[#6b7280]">Ship to </span><ShipTo ctx={ctx} /></div>}
+          {hasShipping(ctx) && <div className="mt-3"><div className="text-[10px] font-bold uppercase tracking-wide text-[#6b7280] mb-0.5">Ship to</div><ShipTo ctx={ctx} /></div>}
         </div>
         <div className="min-w-0">
-          <div className="text-[11px] font-bold mb-1" style={{ color: ctx.accent }}>From</div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-[#6b7280] mb-1">From</div>
           <BusinessLines ctx={ctx} nameClass="text-[13px] font-bold" />
         </div>
       </div>
@@ -46,7 +46,7 @@ const creative: TemplateDef = {
     <div key="t" className="flex justify-end">
       <div className="w-[330px] rounded-2xl bg-[#F7F9FC] p-5">
         {totalsRows(ctx).filter((r) => !r.strong).map((r, i) => (
-          <div key={i} className={cx('flex justify-between py-1', r.muted && 'text-[#6b7280]')}><span>{r.label}</span><span className="tabular-nums">{r.value}</span></div>
+          <div key={i} className={cx('flex justify-between py-1', r.muted && 'text-[#6b7280]')}><span>{r.label}</span><span className="tabular-nums whitespace-nowrap">{r.value}</span></div>
         ))}
         <div className="mt-3 rounded-xl px-4 py-3 text-[var(--on-accent)] flex justify-between items-baseline" style={{ background: ctx.accent }}>
           <span className="font-bold">{ctx.totals.amountPaid ? 'Balance due' : 'Total due'}</span>

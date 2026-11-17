@@ -2,19 +2,25 @@
 // Runs after `vite build`. App routes (create, edit, settings…) stay client-rendered via SPA fallback.
 import { chromium } from '@playwright/test'
 import { preview } from 'vite'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const SITE_URL = (process.env.VITE_SITE_URL || 'https://invoicestudio.app').replace(/\/$/, '')
-const ROUTES = ['/', '/features', '/how-to-use', '/faq', '/support', '/contact', '/privacy', '/download', '/templates', '/bulk', '/create']
+const ROUTES = ['/', '/features', '/how-to-use', '/faq', '/support', '/contact', '/privacy', '/download', '/templates', '/bulk']
+const SITEMAP = [...ROUTES, '/create']
 
-const server = await preview({ preview: { port: 4180, strictPort: true }, logLevel: 'silent' })
+// Keep the untouched SPA shell for app routes (/create, /edit/*, /invoices, /settings) and offline fallback
+copyFileSync('dist/index.html', 'dist/app.html')
+
+const server = await preview({ preview: { port: 0 }, logLevel: 'silent' })
+const base = server.resolvedUrls.local[0].replace(/\/$/, '')
 const browser = await chromium.launch()
-const ctx = await browser.newContext()
+try {
+const ctx = await browser.newContext({ serviceWorkers: 'block' })
 await ctx.addInitScript(() => { try { localStorage.setItem('invoice-studio:tour-done', '1') } catch { /* ignore */ } })
 const page = await ctx.newPage()
 for (const route of ROUTES) {
-  await page.goto(`http://localhost:4180${route}`, { waitUntil: 'networkidle' })
+  await page.goto(`${base}${route}`, { waitUntil: 'networkidle' })
   await page.waitForSelector('main h1', { timeout: 15000 })
   // Drop off-screen measuring layers and other runtime-only nodes from the static snapshot
   const html = '<!doctype html>\n' + (await page.evaluate(() => {
@@ -26,13 +32,15 @@ for (const route of ROUTES) {
   writeFileSync(join(dir, 'index.html'), html)
   console.log('prerendered', route)
 }
-await browser.close()
-await new Promise((r) => server.httpServer.close(r))
+} finally {
+  await browser.close()
+  await new Promise((r) => server.httpServer.close(r))
+}
 
 const today = new Date().toISOString().slice(0, 10)
 writeFileSync('dist/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${ROUTES.map((r) => `  <url><loc>${SITE_URL}${r === '/' ? '/' : r}</loc><lastmod>${today}</lastmod><priority>${r === '/' ? '1.0' : '0.8'}</priority></url>`).join('\n')}
+${SITEMAP.map((r) => `  <url><loc>${SITE_URL}${r === '/' ? '/' : r}</loc><lastmod>${today}</lastmod><priority>${r === '/' ? '1.0' : '0.8'}</priority></url>`).join('\n')}
 </urlset>
 `)
 writeFileSync('dist/robots.txt', `User-agent: *

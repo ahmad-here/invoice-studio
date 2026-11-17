@@ -1,7 +1,8 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { BusinessProfile, Invoice, UserPreferences } from '@/types/invoice'
 import { SCHEMA_VERSION } from '@/types/invoice'
-import { migrateBusiness, migrateInvoice, migratePrefs, type BackupFile } from '@/lib/schema'
+import type { BackupFile } from '@/lib/schema'
+import { fastInvoice, fastPrefs, fastBusiness } from '@/lib/fastMigrate'
 import { emptyBusiness } from '@/lib/defaults'
 import { uid } from '@/lib/sanitize'
 
@@ -25,10 +26,20 @@ function db() {
 export const storage = {
   async listInvoices(): Promise<Invoice[]> {
     const all = await (await db()).getAllFromIndex('invoices', 'updatedAt')
-    return all.reverse().map((r) => migrateInvoice(r)).filter((x): x is Invoice => !!x)
+    const out: Invoice[] = []
+    let slow: ((r: unknown) => Invoice | null) | null = null
+    for (const r of all.reverse()) {
+      const ok = fastInvoice(r)
+      if (ok) { out.push(ok); continue }
+      slow ??= (await import('@/lib/schema')).migrateInvoice
+      const m = slow(r)
+      if (m) out.push(m)
+    }
+    return out
   },
   async getInvoice(id: string): Promise<Invoice | null> {
-    return migrateInvoice(await (await db()).get('invoices', id))
+    const r = await (await db()).get('invoices', id)
+    return fastInvoice(r) ?? (r ? (await import('@/lib/schema')).migrateInvoice(r) : null)
   },
   /** Persists exactly what it is given; the store owns updatedAt. */
   async saveInvoice(inv: Invoice): Promise<void> {
@@ -42,7 +53,8 @@ export const storage = {
     await (await db()).delete('invoices', id)
   },
   async getPrefs(): Promise<UserPreferences> {
-    return migratePrefs(await (await db()).get('kv', 'prefs'))
+    const r = await (await db()).get('kv', 'prefs')
+    return fastPrefs(r) ?? (await import('@/lib/schema')).migratePrefs(r)
   },
   async savePrefs(p: UserPreferences): Promise<void> {
     await (await db()).put('kv', p, 'prefs')
@@ -51,9 +63,14 @@ export const storage = {
   async getBusinesses(): Promise<BusinessProfile[]> {
     const d = await db()
     const list = await d.get('kv', 'businesses')
-    if (Array.isArray(list)) return list.map((b) => ({ ...migrateBusiness(b), id: (b as BusinessProfile).id || uid() }))
+    const migrateBusiness = async (b: unknown) => fastBusiness(b) ?? (await import('@/lib/schema')).migrateBusiness(b)
+    if (Array.isArray(list)) {
+      const fixed = await Promise.all(list.map(async (b) => ({ ...(await migrateBusiness(b)), id: (b as BusinessProfile).id || uid() })))
+      if (fixed.some((b, i) => b.id !== (list[i] as BusinessProfile)?.id)) await d.put('kv', fixed, 'businesses')
+      return fixed
+    }
     const legacy = await d.get('kv', 'business')
-    const migrated = legacy ? [{ ...migrateBusiness(legacy), id: uid() }] : []
+    const migrated = legacy ? [{ ...(await migrateBusiness(legacy)), id: uid() }] : []
     if (migrated.length) await d.put('kv', migrated, 'businesses')
     return migrated
   },
@@ -62,7 +79,8 @@ export const storage = {
   },
   /** Unsaved editor work, one slot per invoice (`new` for an unsaved new invoice). */
   async getEditorDraft(key: string): Promise<Invoice | null> {
-    return migrateInvoice(await (await db()).get('kv', `editorDraft:${key}`))
+    const r = await (await db()).get('kv', `editorDraft:${key}`)
+    return fastInvoice(r) ?? (r ? (await import('@/lib/schema')).migrateInvoice(r) : null)
   },
   async saveEditorDraft(key: string, inv: Invoice | null): Promise<void> {
     const d = await db()
@@ -83,6 +101,7 @@ export const storage = {
   },
   /** Merges invoices by id (imported wins). Returns counts. */
   async importBackup(raw: unknown): Promise<{ imported: number; skipped: number }> {
+    const { migrateBusiness, migrateInvoice, migratePrefs } = await import('@/lib/schema')
     if (!raw || typeof raw !== 'object' || (raw as BackupFile).app !== 'invoice-studio') {
       throw new Error('This file is not an Invoice Studio backup.')
     }
@@ -92,7 +111,7 @@ export const storage = {
     }
     const list = Array.isArray(b.invoices) ? b.invoices : []
     const valid = list.map(migrateInvoice).filter((x): x is Invoice => !!x)
-    if (b.preferences) await this.savePrefs(migratePrefs(b.preferences))
+    const localPrefs = await this.getPrefs()
     if (Array.isArray(b.businesses) && b.businesses.length) {
       const existing = await this.getBusinesses()
       const incoming = b.businesses.map((x) => ({ ...migrateBusiness(x), id: (x as BusinessProfile).id || uid() }))
@@ -100,8 +119,15 @@ export const storage = {
       await this.saveBusinesses([...existing.filter((x) => !ids.has(x.id ?? "")), ...incoming])
     } else if (b.business && migrateBusiness(b.business).name) {
       const existing = await this.getBusinesses()
-      await this.saveBusinesses([...existing, { ...migrateBusiness(b.business), id: uid() }])
+      const legacy = migrateBusiness(b.business)
+      const same = (x: BusinessProfile) => x.name === legacy.name && x.email === legacy.email && x.taxNumber === legacy.taxNumber
+      if (!existing.some(same)) await this.saveBusinesses([...existing, { ...legacy, id: uid() }])
     }
+    // Preferences: imported values win, but the default business must point at a real profile
+    const finalList = await this.getBusinesses()
+    const prefs = b.preferences ? migratePrefs(b.preferences) : localPrefs
+    if (!finalList.some((x) => x.id === prefs.defaultBusinessId)) prefs.defaultBusinessId = finalList.some((x) => x.id === localPrefs.defaultBusinessId) ? localPrefs.defaultBusinessId : finalList[0]?.id
+    await this.savePrefs(prefs)
     await this.saveInvoices(valid)
     return { imported: valid.length, skipped: list.length - valid.length }
   },

@@ -1,4 +1,4 @@
-import { memo, useRef, useState, type ReactNode } from 'react'
+import { memo, useCallback, useRef, useState, type ReactNode } from 'react'
 import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, ImagePlus, Plus, Trash2, GripVertical, X, Check } from 'lucide-react'
 import type { BusinessProfile, CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals, Logo, LogoPosition } from '@/types/invoice'
 import { Button, Input, Segmented, Select, Switch, Textarea, cx, Badge } from '@/components/common/ui'
@@ -137,7 +137,7 @@ export const BusinessSection = memo(function BusinessSection({ inv, update, prof
       </div>
     }>
       {profiles.length > 0 && (
-        <Select label="Business profile" className="mb-4" data-tour="business-select" value={inv.businessId ?? ''} onChange={(e) => {
+        <Select label="Business profile" className="mb-4" data-tour="business-select" value={profiles.some((x) => x.id === inv.businessId) ? inv.businessId : ''} onChange={(e) => {
           const pick = profiles.find((x) => x.id === e.target.value)
           if (pick) update({ business: structuredClone(pick), businessId: pick.id })
           else update({ businessId: undefined })
@@ -243,27 +243,30 @@ const ItemRow = memo(function ItemRow({ item, index, count, currency, taxMode, t
   )
 })
 
-export function ItemsSection({ inv, update, totals, defaultTax }: P & { totals: InvoiceTotals; defaultTax: number }) {
+export const ItemsSection = memo(function ItemsSection({ inv, update, totals, defaultTax }: P & { totals: InvoiceTotals; defaultTax: number }) {
   const [confirmIdx, setConfirmIdx] = useState<number | null>(null)
-  const onChange = (id: string, p: Partial<InvoiceItem>) => update((i) => ({ items: i.items.map((it) => (it.id === id ? { ...it, ...p } : it)) }))
-  const onMove = (idx: number, d: -1 | 1) => update((i) => {
+  const itemsRef = useRef(inv.items)
+  itemsRef.current = inv.items
+  // Stable handlers keep each memoised ItemRow from re-rendering when another row changes.
+  const onChange = useCallback((id: string, p: Partial<InvoiceItem>) => update((i) => ({ items: i.items.map((it) => (it.id === id ? { ...it, ...p } : it)) })), [update])
+  const onMove = useCallback((idx: number, d: -1 | 1) => update((i) => {
     const items = [...i.items]
     const j = idx + d
     if (j < 0 || j >= items.length) return {}
     ;[items[idx], items[j]] = [items[j], items[idx]]
     return { items }
-  })
-  const onDuplicate = (idx: number) => update((i) => {
+  }), [update])
+  const onDuplicate = useCallback((idx: number) => update((i) => {
     const items = [...i.items]
     items.splice(idx + 1, 0, { ...items[idx], id: uid() })
     return { items }
-  })
+  }), [update])
   const doDelete = (idx: number) => { update((i) => ({ items: i.items.filter((_, k) => k !== idx) })); setConfirmIdx(null) }
-  const onDelete = (idx: number) => {
-    const it = inv.items[idx]
-    if (it.name || it.unitPrice) setConfirmIdx(idx)
-    else doDelete(idx)
-  }
+  const onDelete = useCallback((idx: number) => {
+    const it = itemsRef.current[idx]
+    if (it && (it.name || it.unitPrice)) setConfirmIdx(idx)
+    else update((i) => ({ items: i.items.filter((_, k) => k !== idx) }))
+  }, [update])
   return (
     <Section title="Line items" description={`${inv.items.length} item${inv.items.length === 1 ? '' : 's'}`} aside={
       <Button size="sm" variant="primary" icon={<Plus className="size-4" />} onClick={() => update((i) => ({ items: [...i.items, newItem(defaultTax)] }))}>Add item</Button>
@@ -285,7 +288,7 @@ export function ItemsSection({ inv, update, totals, defaultTax }: P & { totals: 
       </div>
     </Section>
   )
-}
+})
 
 /* ------------------------------ Totals ------------------------------ */
 export const TotalsSection = memo(function TotalsSection({ inv, update, totals }: P & { totals: InvoiceTotals }) {

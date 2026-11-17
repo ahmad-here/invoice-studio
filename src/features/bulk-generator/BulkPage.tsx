@@ -1,6 +1,6 @@
 import { useSeo } from '@/hooks/useSeo'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, CheckCircle2, Download, Eye, FileArchive, FileJson, FileSpreadsheet, FileStack, RefreshCw, Save, UploadCloud, XCircle } from 'lucide-react'
+import { AlertTriangle, Check, CheckCircle2, Download, Eye, FileArchive, FileJson, FileSpreadsheet, FileStack, RefreshCw, Save, UploadCloud, XCircle } from 'lucide-react'
 import type { BulkImportResult, Invoice, PaperSize, TemplateId } from '@/types/invoice'
 import { useApp, toast } from '@/app/store'
 import { Badge, Button, Card, Input, Modal, PageHeader, Progress, Segmented, Select, cx } from '@/components/common/ui'
@@ -176,8 +176,12 @@ export default function BulkPage() {
       {/* Step indicator */}
       <ol className="mb-6 flex flex-wrap gap-2 text-[13px]" aria-label="Progress">
         {['Upload', 'Review & fix', 'Generate & download'].map((s, i) => {
-          const step = !parsed ? 0 : chosen.length ? 2 : 1
-          return <li key={s} className={cx('flex items-center gap-2 rounded-full border px-3 py-1', i <= step ? 'border-primary-100 bg-primary-50 text-primary-700 font-medium' : 'border-line text-muted')} aria-current={i === step ? 'step' : undefined}><span className="tabular">{i + 1}</span>{s}</li>
+          const step = !parsed ? 0 : (result && (result.issues.length || result.failed.length || !result.invoices.length)) ? 1 : 2
+          return (
+            <li key={s} className={cx('flex items-center gap-2 rounded-full border px-3 py-1', i === step ? 'border-primary bg-primary text-white font-medium' : i < step ? 'border-primary-100 bg-white text-primary-700' : 'border-line text-muted')} aria-current={i === step ? 'step' : undefined}>
+              {i < step ? <Check className="size-3.5" aria-label="done" /> : <span className="tabular">{i + 1}</span>}{s}
+            </li>
+          )
         })}
       </ol>
 
@@ -306,9 +310,9 @@ export default function BulkPage() {
             {/* Actions */}
             <Card className="p-5">
               {job ? (
-                <div className="space-y-3">
-                  <Progress value={job.done} max={job.total} label={job.label} />
-                  <Button size="sm" variant="danger-ghost" onClick={() => abort.current?.abort()}>Cancel</Button>
+                <div className="flex items-end gap-3" role="status" aria-live="polite">
+                  <div className="flex-1"><Progress value={job.done} max={job.total} label={job.label} /></div>
+                  <Button size="sm" variant="secondary" onClick={() => abort.current?.abort()}>Stop</Button>
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center gap-2">

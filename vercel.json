@@ -1,1 +1,8 @@
-{ "rewrites": [{ "source": "/((?!downloads/|assets/).*)", "destination": "/index.html" }], "cleanUrls": true }
+{
+  "rewrites": [
+    {
+      "source": "/((?!downloads/|assets/|.*\\..*).*)",
+      "destination": "/app.html"
+    }
+  ]
+}

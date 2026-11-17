@@ -31,7 +31,7 @@ const corporate: TemplateDef = {
         </div>
         <div className="rounded-md bg-[#EAF5FF] p-3">
           {metaRows(ctx, { number: false }).map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-3 py-0.5"><span className="text-[#4b5563]">{k}</span><span className="font-semibold text-right break-words min-w-0 whitespace-pre-line">{v}</span></div>
+            <div key={k} className="flex justify-between gap-3 py-0.5"><span className="text-[#6b7280]">{k}</span><span className="font-semibold text-[#202938] text-right break-words min-w-0 whitespace-pre-line">{v}</span></div>
           ))}
         </div>
       </div>
@@ -52,7 +52,7 @@ const corporate: TemplateDef = {
     <div key="t" className="ml-auto w-[320px]">
       {totalsRows(ctx).map((r, i) => (
         <div key={i} className={cx('flex justify-between px-3 py-1.5', r.strong ? 'text-[var(--on-accent)] font-bold text-[13.5px] mt-1 rounded-sm' : 'border-b border-[#e5e7eb]', r.muted && 'text-[#6b7280]')} style={r.strong ? { background: ctx.accent } : undefined}>
-          <span>{r.label}</span><span className="tabular-nums">{r.value}</span>
+          <span>{r.label}</span><span className="tabular-nums whitespace-nowrap">{r.value}</span>
         </div>
       ))}
     </div>,

@@ -163,7 +163,7 @@ test.describe('invoice studio', () => {
     await page.getByRole('button', { name: 'Add business' }).last().click()
     await expect(page.getByText('“Default Biz Co” saved.')).toBeVisible()
     await page.getByLabel('Number prefix').fill('ACME-')
-    await page.getByRole('button', { name: 'Save settings' }).click()
+    await page.getByRole('button', { name: 'Save defaults' }).click()
     await expect(page.getByText(/Settings saved/)).toBeVisible()
     await page.goto('/create')
     await expect(page.getByLabel('Invoice number')).toHaveValue('ACME-0001')

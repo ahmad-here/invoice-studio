@@ -13,16 +13,21 @@ function blobToBase64(blob: Blob): Promise<string> {
 }
 
 /**
- * Save a file. Web: triggers a browser download. Android: writes to the app's Documents
- * directory (no storage permission required) and opens the system share sheet.
+ * Save a file. Web: triggers a browser download. Android: writes to app cache (no storage permission)
+ * and opens the system share sheet. Resolves false if the user dismissed the sheet.
  */
-export async function saveFile(blob: Blob, filename: string): Promise<void> {
+export async function saveFile(blob: Blob, filename: string): Promise<boolean> {
   const name = safeFilename(filename, 'download')
   if (isNative()) {
     const [{ Filesystem, Directory }, { Share }] = await Promise.all([import('@capacitor/filesystem'), import('@capacitor/share')])
     const res = await Filesystem.writeFile({ path: name, data: await blobToBase64(blob), directory: Directory.Cache })
-    await Share.share({ title: name, url: res.uri, dialogTitle: 'Save or share' }).catch(() => undefined)
-    return
+    try {
+      await Share.share({ title: name, url: res.uri, dialogTitle: 'Save or share' })
+      return true
+    } catch (e) {
+      if (/cancel/i.test((e as Error).message ?? '')) return false
+      throw e
+    }
   }
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -33,9 +38,10 @@ export async function saveFile(blob: Blob, filename: string): Promise<void> {
   a.click()
   a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 30_000)
+  return true
 }
 
-export const saveText = (text: string, filename: string, type: string) => saveFile(new Blob([text], { type }), filename)
+export const saveText = (text: string, filename: string, type: string): Promise<boolean> => saveFile(new Blob([text], { type }), filename)
 
 export function readFileText(file: File): Promise<string> {
   return file.text()

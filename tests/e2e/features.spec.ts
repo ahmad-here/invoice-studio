@@ -64,10 +64,16 @@ for (const [path, heading] of [
   })
 }
 
-test('download page does not offer a missing APK', async ({ page }) => {
+test('download page offers the published APK and it is a real Android package', async ({ page, request }) => {
   await page.goto('/download')
-  await expect(page.getByText(/APK isn’t published yet/)).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Download APK' })).toHaveCount(0)
+  const link = page.getByRole('link', { name: 'Download APK' })
+  await expect(link).toBeVisible()
+  const href = await link.getAttribute('href')
+  const res = await request.get(href!)
+  expect(res.ok()).toBe(true)
+  const body = await res.body()
+  expect(body.length).toBeGreaterThan(1_000_000)
+  expect(body.subarray(0, 2).toString()).toBe('PK') // APK = zip container
 })
 
 test('contact form validates and opens mail client', async ({ page }) => {

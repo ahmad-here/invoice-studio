@@ -27,10 +27,10 @@ const executive: TemplateDef = {
       </div>
       <div className="grid grid-cols-[1fr_1fr_auto] gap-8 mt-6">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-[#6b7280] mb-1.5">Prepared for</div>
+          <div className="text-[10px] uppercase tracking-[0.25em] text-[#6b7280] mb-1.5">Bill to</div>
           <CustomerLines ctx={ctx} nameClass="text-[14px]" />
         </div>
-        <div className="min-w-0">{hasShipping(ctx) && <><div className="text-[10px] uppercase tracking-[0.25em] text-[#6b7280] mb-1.5">Deliver to</div><ShipTo ctx={ctx} /></>}</div>
+        <div className="min-w-0">{hasShipping(ctx) && <><div className="text-[10px] uppercase tracking-[0.25em] text-[#6b7280] mb-1.5">Ship to</div><ShipTo ctx={ctx} /></>}</div>
         <MetaTable rows={metaRows(ctx, { number: false })} labelClass="text-[#6b7280] italic" valueClass="text-right" />
       </div>
     </div>

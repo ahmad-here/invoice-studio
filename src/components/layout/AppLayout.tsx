@@ -57,7 +57,7 @@ export function AppLayout() {
           <Outlet />
         </Suspense>
       </main>
-      <footer className="border-t border-line bg-white pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
+      <footer className={cx('border-t border-line bg-white pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0', wide && 'hidden lg:block')}>
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2"><Logo className="size-7" /><span className="font-semibold">Invoice Studio</span></div>

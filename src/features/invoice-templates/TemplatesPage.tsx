@@ -1,7 +1,7 @@
 import { useSeo } from '@/hooks/useSeo'
 import { useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Check, Eye } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type { TemplateId } from '@/types/invoice'
 import { useApp, toast } from '@/app/store'
 import { Badge, Button, Modal, PageHeader } from '@/components/common/ui'
@@ -28,20 +28,18 @@ export default function TemplatesPage() {
   return (
     <div>
       <PageHeader title="Invoice templates" description="Ten distinct, print-ready designs. Every template supports your logo, custom fields, multiple pages and all currencies." />
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {TEMPLATES.map((t) => (
           <div key={t.id} className="flex flex-col overflow-hidden rounded-xl border border-line bg-white shadow-xs">
-            <button type="button" onClick={() => setParams({ t: t.id })} className="relative border-b border-line text-left" aria-label={`Preview ${t.name}`}>
+            <button type="button" onClick={() => setParams({ t: t.id })} className="group relative border-b border-line text-left" aria-label={`Preview ${t.name}`}>
+              <span className="absolute inset-x-0 bottom-2 z-10 mx-auto w-fit rounded-full bg-ink/80 px-2.5 py-1 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">Preview</span>
               <TemplateThumb invoice={samples[t.id]} />
               {prefs.defaultTemplate === t.id && <span className="absolute left-2 top-2"><Badge tone="blue"><Check className="size-3" />Default</Badge></span>}
             </button>
             <div className="flex flex-1 flex-col p-3">
               <div className="text-sm font-semibold text-ink">{t.name}</div>
               <p className="mt-0.5 flex-1 text-xs text-muted">{t.description}</p>
-              <div className="mt-3 flex gap-2">
-                <Button size="sm" className="flex-1 justify-center" icon={<Eye className="size-4" />} onClick={() => setParams({ t: t.id })}>Preview</Button>
-                <Button size="sm" variant="primary" className="flex-1 justify-center" onClick={() => applyTemplate(t.id)}>Use</Button>
-              </div>
+              <Button size="sm" variant="secondary" className="mt-3 w-full justify-center" onClick={() => applyTemplate(t.id)}>Use template</Button>
             </div>
           </div>
         ))}

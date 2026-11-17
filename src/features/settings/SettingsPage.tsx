@@ -59,8 +59,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="pb-16">
-      <PageHeader title="Settings" description="Business profiles and defaults applied to every new invoice." actions={<Button variant="primary" onClick={save} loading={saving} disabled={!dirty}>Save settings</Button>} />
+    <div className="pb-24">
+      <PageHeader title="Settings" description="Business profiles save individually. Invoice, tax and payment defaults save with the bar that appears when you change them." />
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
           <BusinessProfiles />
@@ -120,9 +120,9 @@ export default function SettingsPage() {
         </div>
       </div>
       {dirty && (
-        <Card className="fixed inset-x-4 bottom-20 z-30 mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3 shadow-lg lg:bottom-6">
-          <span className="text-sm text-ink">You have unsaved settings.</span>
-          <span className="flex gap-2"><Button size="sm" onClick={() => setP(app.prefs)}>Discard</Button><Button size="sm" variant="primary" onClick={save} loading={saving}>Save</Button></span>
+        <Card className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3 shadow-lg lg:bottom-6">
+          <span className="text-sm text-ink">Unsaved changes to defaults</span>
+          <span className="flex gap-2"><Button size="sm" onClick={() => setP(app.prefs)}>Discard</Button><Button size="sm" variant="primary" onClick={save} loading={saving}>Save defaults</Button></span>
         </Card>
       )}
       <ConfirmDialog open={confirmClear} title="Delete all data?" confirmLabel="Delete everything"

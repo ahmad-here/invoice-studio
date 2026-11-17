@@ -1,7 +1,7 @@
 import { useSeo } from '@/hooks/useSeo'
-import { useDeferredValue, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Copy, Download, FileText, MoreHorizontal, Pencil, Printer, Search, Trash2 } from 'lucide-react'
+import { Copy, Download, FileText, MoreHorizontal, Printer, Search, Trash2 } from 'lucide-react'
 import type { Invoice, InvoiceStatus } from '@/types/invoice'
 import { useApp, toast } from '@/app/store'
 import { Button, Card, ConfirmDialog, EmptyState, Input, PageHeader, Select } from '@/components/common/ui'
@@ -25,6 +25,15 @@ export default function SavedPage() {
   const [menu, setMenu] = useState<string | null>(null)
   const { busy, downloadPdf, print } = useInvoiceActions()
   const dq = useDeferredValue(q.trim().toLowerCase())
+  // Close the mobile action menu on outside tap or Escape
+  useEffect(() => {
+    if (!menu) return
+    const close = (e: Event) => { if (!(e.target as Element).closest?.('[role="menu"],[aria-haspopup]')) setMenu(null) }
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(null) }
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', esc) }
+  }, [menu])
 
   const list = useMemo(() => {
     const totals = new Map<string, number>()
@@ -39,7 +48,7 @@ export default function SavedPage() {
       'issue-desc': (a, b) => b.issueDate.localeCompare(a.issueDate),
       'issue-asc': (a, b) => a.issueDate.localeCompare(b.issueDate),
       'due-asc': (a, b) => (a.dueDate || '9').localeCompare(b.dueDate || '9'),
-      'amount-desc': (a, b) => total(b) - total(a),
+      'amount-desc': (a, b) => a.currency.localeCompare(b.currency) || total(b) - total(a),
       'updated-desc': (a, b) => b.updatedAt - a.updatedAt,
     }
     return filtered.sort(cmp[sort])
@@ -85,17 +94,16 @@ export default function SavedPage() {
                       <Button size="icon" variant="danger-ghost" aria-label={`Delete ${inv.number}`} onClick={() => setToDelete(inv)}><Trash2 className="size-4" /></Button>
                     </div>
                     <div className="md:hidden">
-                      <Button size="icon" variant="ghost" aria-label={`Actions for ${inv.number}`} aria-expanded={menu === inv.id} onClick={() => setMenu(menu === inv.id ? null : inv.id)}><MoreHorizontal className="size-5" /></Button>
+                      <Button size="icon" variant="ghost" aria-label={`Actions for ${inv.number}`} aria-haspopup="menu" aria-expanded={menu === inv.id} onClick={() => setMenu(menu === inv.id ? null : inv.id)}><MoreHorizontal className="size-5" /></Button>
                       {menu === inv.id && (
-                        <div className="absolute right-0 top-10 z-30 w-44 rounded-lg border border-line bg-white py-1 shadow-lg" onMouseLeave={() => setMenu(null)}>
+                        <div role="menu" aria-label={`Actions for ${inv.number}`} className="absolute right-0 bottom-11 z-30 w-48 rounded-lg border border-line bg-white py-1 shadow-lg">
                           {[
-                            { l: 'Edit', i: Pencil, f: () => nav(`/edit/${inv.id}`) },
                             { l: 'Download PDF', i: Download, f: () => downloadPdf(inv) },
                             { l: 'Print / share', i: Printer, f: () => print(inv) },
                             { l: 'Duplicate', i: Copy, f: () => duplicate(inv) },
                             { l: 'Delete', i: Trash2, f: () => setToDelete(inv), danger: true },
                           ].map((a) => (
-                            <button key={a.l} className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-canvas ${a.danger ? 'text-danger' : 'text-ink'}`} onClick={() => { setMenu(null); a.f() }}><a.i className="size-4" />{a.l}</button>
+                            <button key={a.l} role="menuitem" className={`flex w-full items-center gap-2 px-3 py-3 text-left text-sm hover:bg-canvas ${a.danger ? 'mt-1 border-t border-line text-danger' : 'text-ink'}`} onClick={() => { setMenu(null); a.f() }}><a.i className="size-4" />{a.l}</button>
                           ))}
                         </div>
                       )}

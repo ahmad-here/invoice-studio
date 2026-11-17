@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { FilePlus2 } from 'lucide-react'
-import { Button } from '@/components/common/ui'
+import { buttonClass } from '@/components/common/ui'
 
 /** Readable article layout for content/SEO pages (~70ch measure per Refactoring UI). */
 export function ContentLayout({ eyebrow, title, intro, children, cta = true }: { eyebrow?: string; title: string; intro?: ReactNode; children: ReactNode; cta?: boolean }) {
@@ -19,7 +19,7 @@ export function ContentLayout({ eyebrow, title, intro, children, cta = true }: {
             <p className="text-base font-semibold text-ink">Ready to create your invoice?</p>
             <p className="text-sm text-muted">Free, private and no sign-up required.</p>
           </div>
-          <Link to="/create"><Button variant="primary" icon={<FilePlus2 className="size-4" />}>Create invoice</Button></Link>
+          <Link to="/create" className={buttonClass({ variant: 'primary' })}><FilePlus2 className="size-4" aria-hidden />Create invoice</Link>
         </aside>
       )}
     </article>

@@ -14,13 +14,17 @@ const FORMAT: Record<PaperSize, string> = { A4: 'a4', Letter: 'letter', Legal: '
 /** Rasterise page elements at 2× into JPEG pages. Fonts are embedded once and reused (fast for bulk). */
 async function addPages(doc: JsPDF | null, pages: HTMLElement[], paper: PaperSize, fontKey: string): Promise<JsPDF> {
   const [{ jsPDF }, h2i] = await loadLibs()
-  if (!fontCss.has(fontKey)) fontCss.set(fontKey, h2i.getFontEmbedCSS(pages[0]).catch(() => ''))
-  const fontEmbedCSS = await fontCss.get(fontKey)!
+  // All templates share the same two font families; template id only matters if a template uses a new family.
+  const key = fontKey === 'executive' || fontKey === 'elegant' ? 'sans+serif' : 'sans'
+  if (!fontCss.has(key)) fontCss.set(key, h2i.getFontEmbedCSS(pages[0]).catch(() => ''))
+  const fontEmbedCSS = await fontCss.get(key)!
   const { mm, w, h } = PAGE_PX[paper]
   let pdf = doc
   for (const el of pages) {
     const canvas = await h2i.toCanvas(el, { pixelRatio: 2, backgroundColor: '#ffffff', fontEmbedCSS, width: w, height: h, cacheBust: false })
-    const data = canvas.toDataURL('image/jpeg', 0.88)
+    // Binary JPEG avoids the 33% larger base64 string and a decode inside jsPDF
+    const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error('Could not encode page'))), 'image/jpeg', 0.88))
+    const data = new Uint8Array(await blob.arrayBuffer())
     if (!pdf) pdf = new jsPDF({ unit: 'mm', format: FORMAT[paper], compress: true })
     else pdf.addPage(FORMAT[paper], 'portrait')
     pdf.addImage(data, 'JPEG', 0, 0, mm[0], mm[1], undefined, 'FAST')
