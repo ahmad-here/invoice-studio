@@ -16,7 +16,7 @@ const variants: Record<Variant, string> = {
   'danger-ghost': 'text-muted hover:text-danger hover:bg-danger-50',
 }
 const sizes: Record<Size, string> = {
-  sm: 'h-8 px-3 text-[13px] gap-1.5 rounded-md',
+  sm: 'h-9 sm:h-8 px-3 text-[13px] gap-1.5 rounded-md',
   md: 'h-10 px-4 text-sm gap-2 rounded-lg',
   lg: 'h-12 px-5 text-[15px] gap-2 rounded-lg',
   icon: 'h-9 w-9 rounded-lg justify-center',
@@ -104,7 +104,7 @@ export function Segmented<T extends string>({ value, onChange, options, label, c
     <div role="radiogroup" aria-label={label} className={cx('inline-flex rounded-lg bg-canvas p-0.5 border border-line', className)}>
       {options.map((o) => (
         <button key={o.value} type="button" role="radio" aria-checked={value === o.value} title={o.title} onClick={() => onChange(o.value)}
-          className={cx('rounded-md font-medium transition-colors inline-flex items-center justify-center gap-1', size === 'sm' ? 'h-7 px-2.5 text-xs' : 'h-8 px-3 text-[13px]', value === o.value ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink')}>
+          className={cx('rounded-md font-medium transition-colors inline-flex items-center justify-center gap-1', size === 'sm' ? 'h-9 sm:h-7 px-2.5 text-xs' : 'h-10 sm:h-8 px-3 text-[13px]', value === o.value ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink')}>
           {o.label}
         </button>
       ))}
@@ -197,12 +197,12 @@ export function ConfirmDialog({ open, title, message, confirmLabel = 'Delete', d
 export function Toaster() {
   const { toasts, dismiss } = useToasts()
   return (
-    <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-20 lg:bottom-6 z-[60] flex flex-col items-center gap-2 px-4">
+    <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-[calc(8rem+env(safe-area-inset-bottom))] lg:bottom-6 z-[60] flex flex-col items-center gap-2 px-4">
       {toasts.map((t) => (
         <div key={t.id} role={t.kind === 'error' ? 'alert' : 'status'} className="pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-xl border border-line bg-white px-4 py-3 shadow-lg">
           {t.kind === 'success' ? <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" /> : t.kind === 'error' ? <AlertCircle className="mt-0.5 size-5 shrink-0 text-danger" /> : <Info className="mt-0.5 size-5 shrink-0 text-primary" />}
           <p className="min-w-0 flex-1 text-sm text-ink">{t.text}</p>
-          <button aria-label="Dismiss" onClick={() => dismiss(t.id)} className="text-subtle hover:text-ink"><X className="size-4" /></button>
+          <button aria-label="Dismiss" onClick={() => dismiss(t.id)} className="flex size-8 items-center justify-center rounded-md text-muted hover:text-ink"><X className="size-4" /></button>
         </div>
       ))}
     </div>

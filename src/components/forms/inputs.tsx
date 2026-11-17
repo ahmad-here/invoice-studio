@@ -1,7 +1,7 @@
 import { useEffect, useState, type InputHTMLAttributes } from 'react'
 import type { CurrencyCode, Minor } from '@/types/invoice'
 import { Input } from '@/components/common/ui'
-import { minorToInput, toMinor } from '@/lib/money'
+import { minorToInput, normalizeDecimal, toMinor } from '@/lib/money'
 
 type Base = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'prefix'> & { label?: string; hint?: string; srOnlyLabel?: boolean; className?: string; suffix?: string; prefix?: string }
 
@@ -24,8 +24,9 @@ export function MoneyInput({ value, onChange, currency, allowNegative = false, .
       onFocus={() => setFocused(true)}
       onBlur={() => { setFocused(false); setErr(null) }}
       onChange={(e) => {
-        const t = e.target.value.replace(/[^\d.,-]/g, '').replace(/,/g, '.')
-        setText(t)
+        const raw = e.target.value.replace(/[^\d.,\s'-]/g, '')
+        setText(raw)
+        const t = normalizeDecimal(raw)
         if (t === '' || t === '-' || t === '.') { onChange(0); setErr(null); return }
         const m = toMinor(t, currency)
         if (Number.isNaN(m)) setErr('Enter a valid amount')
@@ -53,9 +54,10 @@ export function NumberInput({ value, onChange, min = 0, max, decimals = 4, ...re
       onFocus={() => setFocused(true)}
       onBlur={() => { setFocused(false); setErr(null) }}
       onChange={(e) => {
-        const t = e.target.value.replace(/[^\d.,-]/g, '').replace(/,/g, '.')
-        setText(t)
-        if (t === '' || t === '.') { onChange(0); setErr(null); return }
+        const raw = e.target.value.replace(/[^\d.,\s'-]/g, '')
+        setText(raw)
+        const t = normalizeDecimal(raw)
+        if (t === '' || t === '.' || t === '-') { onChange(0); setErr(null); return }
         const n = Number(t)
         if (!Number.isFinite(n)) setErr('Enter a number')
         else if (n < min) setErr(`Minimum is ${min}`)

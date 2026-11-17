@@ -49,6 +49,28 @@ export function toMinor(major: number | string, code: CurrencyCode): Minor {
   return neg ? -value : value
 }
 
+/**
+ * Normalise typed numbers: "1,234.50" → "1234.50", "1.234,50" → "1234.50", "12,5" → "12.5", "1,000" → "1000".
+ * The last separator is the decimal point unless it is a comma followed by exactly three digits (thousands).
+ */
+export function normalizeDecimal(input: string): string {
+  let s = input.replace(/[\s\u00A0']/g, '').replace(/[^\d.,-]/g, '')
+  const neg = s.startsWith('-')
+  s = s.replace(/-/g, '')
+  const lastDot = s.lastIndexOf('.')
+  const lastComma = s.lastIndexOf(',')
+  if (lastDot >= 0 && lastComma >= 0) {
+    const dec = lastDot > lastComma ? '.' : ','
+    const thou = dec === '.' ? ',' : '.'
+    s = s.split(thou).join('').replace(dec, '.')
+  } else if (lastComma >= 0) {
+    s = /^\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, '') : s.split(',').length === 2 ? s.replace(',', '.') : s.replace(/,/g, '')
+  } else if ((s.match(/\./g) ?? []).length > 1) {
+    s = s.replace(/\./g, '') // "1.234.567" thousands
+  }
+  return (neg ? '-' : '') + s
+}
+
 export function fromMinor(minor: Minor, code: CurrencyCode): number {
   return minor / 10 ** currencyDecimals(code)
 }

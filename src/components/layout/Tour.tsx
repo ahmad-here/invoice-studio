@@ -29,6 +29,7 @@ export function Tour() {
   const loc = useLocation()
   const nav = useNavigate()
   const cardRef = useRef<HTMLDivElement>(null)
+  const returnFocus = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     const on = () => { if (loc.pathname !== '/') nav('/'); setStep(0) }
@@ -40,7 +41,7 @@ export function Tour() {
     if (!done() && loc.pathname === '/' && !navigator.webdriver) { const t = setTimeout(() => setStep(0), 600); return () => clearTimeout(t) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const finish = useCallback(() => { markDone(); setStep(null) }, [])
+  const finish = useCallback(() => { markDone(); setStep(null); returnFocus.current?.focus?.() }, [])
 
   const measure = useCallback(() => {
     if (step === null) return
@@ -60,9 +61,17 @@ export function Tour() {
 
   useEffect(() => {
     if (step === null) return
+    if (!returnFocus.current) returnFocus.current = document.activeElement as HTMLElement | null
     cardRef.current?.querySelector<HTMLElement>('[data-primary]')?.focus()
     const k = (e: KeyboardEvent) => {
       if (e.key === 'Escape') finish()
+      if (e.key === 'Tab' && cardRef.current) {
+        const f = [...cardRef.current.querySelectorAll<HTMLElement>('button')]
+        const first = f[0], last = f[f.length - 1]
+        if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault() }
+        else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault() }
+        else if (!cardRef.current.contains(document.activeElement)) { first.focus(); e.preventDefault() }
+      }
       if (e.key === 'ArrowRight') setStep((s) => (s !== null && s < STEPS.length - 1 ? s + 1 : s))
       if (e.key === 'ArrowLeft') setStep((s) => (s ? s - 1 : s))
     }
@@ -93,11 +102,11 @@ export function Tour() {
             {!s.target && <Sparkles className="size-5 text-primary" />}
             <h2 id="tour-title" className="text-base font-semibold text-ink">{s.title}</h2>
           </div>
-          <button aria-label="Skip tour" onClick={finish} className="text-subtle hover:text-ink"><X className="size-5" /></button>
+          <button aria-label="Skip tour" onClick={finish} className="-m-1.5 flex size-9 items-center justify-center rounded-lg text-muted hover:bg-canvas hover:text-ink"><X className="size-5" /></button>
         </div>
         <p id="tour-body" className="text-sm leading-relaxed text-muted">{s.body}</p>
         <div className="mt-5 flex items-center justify-between gap-3">
-          <div className="flex gap-1" aria-label={`Step ${step + 1} of ${STEPS.length}`}>
+          <div className="flex items-center gap-1" role="img" aria-label={`Step ${step + 1} of ${STEPS.length}`}>
             {STEPS.map((_, i) => <span key={i} className={`h-1.5 rounded-full transition-all ${i === step ? 'w-5 bg-primary' : 'w-1.5 bg-line-strong'}`} />)}
           </div>
           <div className="flex gap-2">

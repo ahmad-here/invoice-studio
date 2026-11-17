@@ -19,7 +19,7 @@ const elegant: TemplateDef = {
         </div>
         <div className="text-right shrink-0">
           <div className="font-serif text-[40px] leading-none text-[var(--accent)]">{ctx.inv.title || 'Invoice'}</div>
-          <div className="mt-3"><MetaTable rows={metaRows(ctx, { custom: false })} className="ml-auto" labelClass="text-[#9ca3af] text-left" valueClass="text-right text-[var(--accent)] font-medium" /></div>
+          <div className="mt-3"><MetaTable rows={metaRows(ctx, { custom: false })} className="ml-auto" labelClass="text-[#6b7280] text-left" valueClass="text-right text-[var(--accent)] font-medium" /></div>
         </div>
       </div>
       <div className="mt-8 grid grid-cols-2 gap-8 border-t border-[#e5e7eb] pt-6">
@@ -31,29 +31,29 @@ const elegant: TemplateDef = {
         <div className="min-w-0">
           {ctx.inv.customFields.some((f) => f.visible && f.label && f.value) && <>
             <div className="font-serif text-[13px] text-[var(--accent)] mb-1">Details</div>
-            <MetaTable rows={metaRows(ctx, { number: false }).slice(metaRows(ctx, { number: false, custom: false }).length)} labelClass="text-[#9ca3af]" />
+            <MetaTable rows={metaRows(ctx, { number: false }).slice(metaRows(ctx, { number: false, custom: false }).length)} labelClass="text-[#6b7280]" />
           </>}
         </div>
       </div>
     </div>
   ),
-  ContHeader: ({ ctx, page }) => <div className="pt-10 mb-5 flex justify-between text-[11px]"><span className="font-serif text-[15px] text-[var(--accent)]">{ctx.inv.title || 'Invoice'} {ctx.inv.number}</span><span className="text-[#9ca3af]">Page {page}</span></div>,
+  ContHeader: ({ ctx, page }) => <div className="pt-10 mb-5 flex justify-between text-[11px]"><span className="font-serif text-[15px] text-[var(--accent)]">{ctx.inv.title || 'Invoice'} {ctx.inv.number}</span><span className="text-[#6b7280]">Page {page}</span></div>,
   columns: (ctx) => standardColumns(ctx, { nameClass: 'font-medium text-[var(--accent)]' }),
   table: {
     className: 'w-full',
-    theadClass: 'text-white [&_th]:bg-[var(--accent)]',
+    theadClass: 'text-[var(--on-accent)] [&_th]:bg-[var(--accent)]',
     thClass: 'px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em]',
     tdClass: 'px-3 py-3 align-top border-b border-[#e5e7eb]',
   },
   summary: (ctx) => [
     <div key="t" className="ml-auto w-[300px]">
       {totalsRows(ctx).map((r, i) => (
-        <div key={i} className={cx('flex justify-between px-3 py-1.5', r.strong ? 'bg-[var(--accent)] text-white font-semibold text-[13.5px]' : '', r.muted && 'text-[#9ca3af]')}>
+        <div key={i} className={cx('flex justify-between px-3 py-1.5', r.strong ? 'bg-[var(--accent)] text-[var(--on-accent)] font-semibold text-[13.5px]' : '', r.muted && 'text-[#6b7280]')}>
           <span className={r.strong ? 'font-serif' : ''}>{r.label}</span><span className="tabular-nums">{r.value}</span>
         </div>
       ))}
     </div>,
-    ...tailBlocks(ctx, { titleClass: 'font-serif text-[13px] text-[var(--accent)] mb-1', labelClass: 'text-[#9ca3af]', thanksClass: 'font-serif text-[16px] text-[var(--accent)]' }),
+    ...tailBlocks(ctx, { titleClass: 'font-serif text-[13px] text-[var(--accent)] mb-1', labelClass: 'text-[#6b7280]', thanksClass: 'font-serif text-[16px] text-[var(--accent)]' }),
   ],
   Footer: ({ ctx, page, pageCount }) => <FooterText ctx={ctx} page={page} pageCount={pageCount} className="border-t border-[var(--accent)] pt-2 text-[10px] text-[#6b7280]" />,
 }

@@ -52,12 +52,12 @@ export function AppLayout() {
           </div>
         </div>
       </header>
-      <main id="main" className={cx('mx-auto w-full flex-1 px-4 pt-6 pb-12 sm:px-6', wide ? 'max-w-[1600px]' : 'max-w-6xl')}>
+      <main id="main" className={cx('mx-auto w-full flex-1 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 lg:pb-12', wide ? 'max-w-[1600px]' : 'max-w-6xl')}>
         <Suspense fallback={<Spinner />}>
           <Outlet />
         </Suspense>
       </main>
-      <footer className="border-t border-line bg-white pb-24 lg:pb-0">
+      <footer className="border-t border-line bg-white pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2"><Logo className="size-7" /><span className="font-semibold">Invoice Studio</span></div>
@@ -75,7 +75,7 @@ export function AppLayout() {
       <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white pb-[env(safe-area-inset-bottom)] lg:hidden">
         <div className="grid grid-cols-6">
           {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.end} data-tour={n.tour} className={({ isActive }) => cx('flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium', isActive ? 'text-primary' : 'text-muted')}>
+            <NavLink key={n.to} to={n.to} end={n.end} data-tour={n.tour} className={({ isActive }) => cx('flex min-h-14 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium', isActive ? 'text-primary' : 'text-muted')}>
               <n.icon className="size-5" aria-hidden />{n.short}
             </NavLink>
           ))}

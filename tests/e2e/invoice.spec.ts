@@ -49,7 +49,7 @@ test.describe('invoice studio', () => {
     await page.goto('/create')
     await page.getByRole('tab', { name: 'From & To' }).click()
     await page.getByLabel('Customer name').fill('Draft Customer')
-    await page.waitForTimeout(900)
+    await page.waitForTimeout(2000)
     await page.reload()
     await expect(page.getByText('We restored your unsaved changes')).toBeVisible()
     await page.getByRole('tab', { name: 'From & To' }).click()

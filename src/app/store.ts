@@ -16,7 +16,8 @@ interface AppState {
   invoices: Invoice[]
   init: () => Promise<void>
   reload: () => Promise<void>
-  saveInvoice: (inv: Invoice) => Promise<void>
+  /** Persists and returns the stamped invoice. */
+  saveInvoice: (inv: Invoice) => Promise<Invoice>
   saveMany: (list: Invoice[]) => Promise<void>
   deleteInvoice: (id: string) => Promise<void>
   savePrefs: (p: UserPreferences) => Promise<void>
@@ -58,17 +59,18 @@ export const useApp = create<AppState>((set, get) => ({
   async saveInvoice(inv) {
     const saved = { ...inv, updatedAt: Date.now() }
     await storage.saveInvoice(saved)
+    set((s) => ({ invoices: [saved, ...s.invoices.filter((i) => i.id !== inv.id)] }))
     const { prefs } = get()
     const n = trailing(inv.number, prefs.numberPrefix)
-    if (n >= prefs.nextNumber) await get().savePrefs({ ...prefs, nextNumber: n + 1 })
-    set((s) => ({ invoices: [saved, ...s.invoices.filter((i) => i.id !== inv.id)] }))
+    if (n >= prefs.nextNumber) await get().savePrefs({ ...prefs, nextNumber: n + 1 }).catch(() => undefined)
+    return saved
   },
   async saveMany(list) {
     const now = Date.now()
     const stamped = list.map((i, k) => ({ ...i, updatedAt: now + k }))
     await storage.saveInvoices(stamped)
     const ids = new Set(stamped.map((i) => i.id))
-    set((s) => ({ invoices: [...stamped.reverse(), ...s.invoices.filter((i) => !ids.has(i.id))] }))
+    set((s) => ({ invoices: [...[...stamped].reverse(), ...s.invoices.filter((i) => !ids.has(i.id))] }))
   },
   async deleteInvoice(id) {
     await storage.deleteInvoice(id)

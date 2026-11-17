@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, ImagePlus, Plus, Tr
 import type { BusinessProfile, CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals, Logo, LogoPosition } from '@/types/invoice'
 import { Button, Input, Segmented, Select, Switch, Textarea, cx, Badge } from '@/components/common/ui'
 import { MoneyInput, NumberInput } from '@/components/forms/inputs'
-import { CURRENCIES, formatMoney, convertMinorPrecision } from '@/lib/money'
+import { CURRENCIES, formatMoney, convertMinorPrecision, currencyDecimals } from '@/lib/money'
 import { newItem } from '@/lib/defaults'
 import { uid } from '@/lib/sanitize'
 import { addDays, parseISO } from '@/lib/dates'
@@ -60,6 +60,7 @@ export const DetailsSection = memo(function DetailsSection({ inv, update, number
         </Select>
         <Select label="Currency" value={inv.currency} hint="Formatting only — no conversion is applied." onChange={(e) => {
           const to = e.target.value as CurrencyCode
+          if (currencyDecimals(to) < currencyDecimals(inv.currency)) toast.info(`${to} has fewer decimal places — amounts were rounded. Switch back won't restore the decimals.`)
           update((i) => {
             const conv = (m: number) => convertMinorPrecision(m, i.currency, to)
             return {
@@ -208,10 +209,10 @@ const ItemRow = memo(function ItemRow({ item, index, count, currency, taxMode, t
         <span className="text-xs font-medium text-muted">Item {index + 1}</span>
         <span className="ml-auto text-sm font-semibold tabular text-ink">{formatMoney(total, currency)}</span>
         <div className="flex">
-          <Button size="icon" variant="ghost" className="size-8" aria-label={`Move item ${index + 1} up`} disabled={index === 0} onClick={() => onMove(index, -1)}><ArrowUp className="size-4" /></Button>
-          <Button size="icon" variant="ghost" className="size-8" aria-label={`Move item ${index + 1} down`} disabled={index === count - 1} onClick={() => onMove(index, 1)}><ArrowDown className="size-4" /></Button>
-          <Button size="icon" variant="ghost" className="size-8" aria-label={`Duplicate item ${index + 1}`} onClick={() => onDuplicate(index)}><Copy className="size-4" /></Button>
-          <Button size="icon" variant="danger-ghost" className="size-8" aria-label={`Delete item ${index + 1}`} onClick={() => onDelete(index)}><Trash2 className="size-4" /></Button>
+          <Button size="icon" variant="ghost" className="size-10 sm:size-8" aria-label={`Move item ${index + 1} up`} disabled={index === 0} onClick={() => onMove(index, -1)}><ArrowUp className="size-4" /></Button>
+          <Button size="icon" variant="ghost" className="size-10 sm:size-8" aria-label={`Move item ${index + 1} down`} disabled={index === count - 1} onClick={() => onMove(index, 1)}><ArrowDown className="size-4" /></Button>
+          <span className="mx-1 h-5 w-px bg-line" aria-hidden /><Button size="icon" variant="ghost" className="size-10 sm:size-8" aria-label={`Duplicate item ${index + 1}`} onClick={() => onDuplicate(index)}><Copy className="size-4" /></Button>
+          <Button size="icon" variant="danger-ghost" className="size-10 sm:size-8" aria-label={`Delete item ${index + 1}`} onClick={() => onDelete(index)}><Trash2 className="size-4" /></Button>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_88px_128px]">
@@ -386,9 +387,9 @@ export function FieldListEditor({ fields, onChange, emptyText }: { fields: Custo
             <label className="mr-2 flex items-center gap-1.5 text-xs text-muted"><input type="checkbox" checked={f.required} onChange={(e) => set(f.id, { required: e.target.checked })} className="accent-[var(--color-primary)]" /> Required</label>
             <Button size="sm" variant="ghost" icon={f.visible ? <Eye className="size-4" /> : <EyeOff className="size-4" />} onClick={() => set(f.id, { visible: !f.visible })} aria-pressed={f.visible}>{f.visible ? 'Visible' : 'Hidden'}</Button>
             <span className="ml-auto flex">
-              <Button size="icon" variant="ghost" className="size-8" aria-label="Move field up" disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp className="size-4" /></Button>
-              <Button size="icon" variant="ghost" className="size-8" aria-label="Move field down" disabled={i === fields.length - 1} onClick={() => move(i, 1)}><ArrowDown className="size-4" /></Button>
-              <Button size="icon" variant="danger-ghost" className="size-8" aria-label="Remove field" onClick={() => onChange(fields.filter((x) => x.id !== f.id))}><Trash2 className="size-4" /></Button>
+              <Button size="icon" variant="ghost" className="size-10 sm:size-8" aria-label="Move field up" disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp className="size-4" /></Button>
+              <Button size="icon" variant="ghost" className="size-10 sm:size-8" aria-label="Move field down" disabled={i === fields.length - 1} onClick={() => move(i, 1)}><ArrowDown className="size-4" /></Button>
+              <Button size="icon" variant="danger-ghost" className="size-10 sm:size-8" aria-label="Remove field" onClick={() => onChange(fields.filter((x) => x.id !== f.id))}><Trash2 className="size-4" /></Button>
             </span>
           </div>
         </div>

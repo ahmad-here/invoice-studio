@@ -37,8 +37,8 @@ export default function Dashboard() {
           <div className="mt-7 flex flex-wrap gap-3">
             <Button size="lg" variant="primary" icon={<FilePlus2 className="size-5" />} onClick={() => nav('/create')}>Create invoice</Button>
             <Button size="lg" icon={<Layers className="size-5" />} onClick={() => nav('/bulk')}>Bulk generate</Button>
-            {!isNative() && <Button size="lg" variant="ghost" icon={<Smartphone className="size-5" />} onClick={() => nav('/download')}>Get the Android app</Button>}
           </div>
+          {!isNative() && <Link to="/download" className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-700"><Smartphone className="size-4" />Also available for Android →</Link>}
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-muted">
             <li className="flex items-center gap-1.5"><ShieldCheck className="size-4 text-primary" />Private — data never leaves your device</li>
             <li className="flex items-center gap-1.5"><WifiOff className="size-4 text-primary" />Works offline</li>

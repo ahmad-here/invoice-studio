@@ -165,13 +165,15 @@ function applyDates(inv: Invoice, issueRaw: string, dueRaw: string, ctx: ParseCo
   if (inv.dueDate < inv.issueDate) errors.push({ row, invoiceNumber: inv.number, field: 'due_date', message: 'Due date is before the issue date.', severity: 'warning' })
 }
 
-function applyBusiness(inv: Invoice, b: Partial<Record<'name' | 'email' | 'phone' | 'address' | 'taxNumber', string>>) {
-  for (const [k, v] of Object.entries(b)) if (v) (inv.business as unknown as Record<string, string>)[k] = cleanText(v, 1000)
+const BUSINESS_TEXT_KEYS = ['name', 'email', 'phone', 'address', 'taxNumber'] as const
+function applyBusiness(inv: Invoice, b: Partial<Record<(typeof BUSINESS_TEXT_KEYS)[number], string>>) {
+  for (const k of BUSINESS_TEXT_KEYS) if (b[k]) inv.business[k] = cleanText(b[k], 1000)
 }
 
+const CUSTOMER_TEXT_KEYS = ['name', 'company', 'email', 'phone', 'billingAddress', 'shippingAddress', 'taxId', 'reference'] as const
 function applyCustomer(inv: Invoice, c: Partial<Record<string, string>>, row: number, errors: BulkImportError[]) {
   const cust = emptyCustomer()
-  for (const [k, v] of Object.entries(c)) if (v && k in cust && k !== 'hidden') (cust as unknown as Record<string, string>)[k] = cleanText(v, 1000)
+  for (const k of CUSTOMER_TEXT_KEYS) if (c[k]) cust[k] = cleanText(c[k], 1000)
   cust.hidden = (['company', 'email', 'phone', 'billingAddress', 'shippingAddress', 'taxId', 'reference'] as const).filter((k) => !cust[k])
   inv.customer = cust
   if (!cust.name && !cust.company) errors.push({ row, invoiceNumber: inv.number, field: 'customer_name', message: 'Missing customer name.', severity: 'error' })
@@ -250,7 +252,7 @@ function finalize(format: 'csv' | 'json', accs: Acc[], issues: BulkImportError[]
       acc.errors.push({ row: acc.rows[0] ?? 0, invoiceNumber: acc.inv.number, message: 'Invoice has no line items.', severity: 'error' })
     }
     if (existing.has(acc.inv.number)) {
-      acc.errors.push({ row: acc.rows[0] ?? 0, invoiceNumber: acc.inv.number, field: 'invoice_number', message: `${acc.inv.number} already exists in Saved Invoices. Saving will keep both.`, severity: 'warning' })
+      acc.errors.push({ row: acc.rows[0] ?? 0, invoiceNumber: acc.inv.number, field: 'invoice_number', message: `${acc.inv.number} already exists in Saved Invoices. It can be downloaded, but “Save to invoices” will skip it.`, severity: 'warning' })
     }
     issues.push(...acc.errors)
     if (acc.errors.some((e) => e.severity === 'error')) failed.push({ invoiceNumber: acc.inv.number, rows: acc.rows })
@@ -349,5 +351,5 @@ export function processFile(name: string, text: string, ctx: ParseContext, mappi
 }
 
 export function errorReportCsv(issues: BulkImportError[]): string {
-  return Papa.unparse(issues.map((e) => ({ row: e.row, invoice_number: e.invoiceNumber ?? '', field: e.field ?? '', severity: e.severity, message: e.message })))
+  return Papa.unparse(issues.map((e) => ({ row: e.row, invoice_number: e.invoiceNumber ?? '', field: e.field ?? '', severity: e.severity, message: e.message })), { escapeFormulae: true })
 }

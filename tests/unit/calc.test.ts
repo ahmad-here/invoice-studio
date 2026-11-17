@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { allocate, calculateTotals, discountAmount, type CalcInput } from '@/lib/calc'
-import { formatMoney, minorToInput, toMinor, convertMinorPrecision } from '@/lib/money'
+import { formatMoney, minorToInput, toMinor, convertMinorPrecision, normalizeDecimal } from '@/lib/money'
 import type { InvoiceItem } from '@/types/invoice'
 
 const item = (p: Partial<InvoiceItem>): InvoiceItem => ({
@@ -36,6 +36,18 @@ describe('money conversion', () => {
   it('converts precision between currencies', () => {
     expect(convertMinorPrecision(1999, 'USD', 'JPY')).toBe(20)
     expect(convertMinorPrecision(20, 'JPY', 'USD')).toBe(2000)
+  })
+})
+
+describe('normalizeDecimal (typed amounts)', () => {
+  it('handles thousands and decimal separators', () => {
+    expect(normalizeDecimal('1,234')).toBe('1234')
+    expect(normalizeDecimal('1,234.50')).toBe('1234.50')
+    expect(normalizeDecimal('1.234,50')).toBe('1234.50')
+    expect(normalizeDecimal('12,5')).toBe('12.5')
+    expect(normalizeDecimal('1 000,25')).toBe('1000.25')
+    expect(normalizeDecimal('1.234.567')).toBe('1234567')
+    expect(normalizeDecimal('-19.99')).toBe('-19.99')
   })
 })
 

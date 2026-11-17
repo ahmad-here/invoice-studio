@@ -38,7 +38,16 @@ export function allocate(amount: Minor, weights: Minor[]): Minor[] {
  *  grand total    = subtotal − discounts + tax + shipping + adjustment
  *  balance due    = grand total − amount paid
  */
+const memo = new WeakMap<object, InvoiceTotals>()
 export function calculateTotals(inv: CalcInput): InvoiceTotals {
+  const hit = memo.get(inv)
+  if (hit) return hit
+  const t = computeTotals(inv)
+  memo.set(inv, t)
+  return t
+}
+
+function computeTotals(inv: CalcInput): InvoiceTotals {
   const base = inv.items.map((it) => {
     const subtotal = lineSubtotal(it)
     const discount = discountAmount(subtotal, it.discount)

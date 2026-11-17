@@ -18,7 +18,7 @@ const retail: TemplateDef = {
         <div className="flex justify-between items-end gap-6 pb-3 border-b border-[#202938]">
           <BusinessLines ctx={ctx} nameClass="text-[17px] font-extrabold uppercase tracking-wide" className="text-[10.5px] text-[#4b5563] min-w-0" />
           <div className="text-right shrink-0">
-            <div className="inline-block px-3 py-1 text-white text-[13px] font-bold uppercase tracking-[0.1em]" style={{ background: ctx.accent }}>{ctx.inv.title || 'Sales invoice'}</div>
+            <div className="inline-block px-3 py-1 text-[var(--on-accent)] text-[13px] font-bold uppercase tracking-[0.1em]" style={{ background: ctx.accent }}>{ctx.inv.title || 'Sales invoice'}</div>
             <div className="mt-2 font-mono text-[12px]">{ctx.inv.number}</div>
           </div>
         </div>

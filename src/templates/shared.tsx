@@ -8,6 +8,18 @@ import { safeUrl } from '@/lib/sanitize'
 /* ------------------------------ helpers ------------------------------ */
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ')
+/** WCAG relative luminance → pick white or ink text for a background colour. */
+export function readableOn(hex: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex)
+  if (!m) return '#ffffff'
+  const [r, g, b] = [0, 2, 4].map((i) => {
+    const c = parseInt(m[1].slice(i, i + 2), 16) / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  })
+  const L = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  // contrast with white = 1.05/(L+0.05); with #202938 (L≈0.022) = (L+0.05)/0.072
+  return 1.05 / (L + 0.05) >= (L + 0.05) / 0.072 ? '#ffffff' : '#202938'
+}
 export const pct = (n: number) => `${formatNumber(n, 'en-US', 3)}%`
 
 export const STATUS_LABEL: Record<Invoice['status'], string> = {
@@ -108,7 +120,7 @@ export function ItemName({ ctx, item, nameClass, descClass, showSku = false }: {
   return (
     <div className="break-words">
       <div className={nameClass}>{item.name || ' '}</div>
-      {showSku && item.sku && <div className={cx('text-[10px] opacity-70', descClass)}>SKU {item.sku}</div>}
+      {showSku && item.sku && <div className={cx('text-[10.5px] text-[#6b7280]', descClass)}>SKU {item.sku}</div>}
       {ctx.has.description && item.description && <div className={cx('whitespace-pre-line', descClass)}>{item.description}</div>}
     </div>
   )
@@ -126,7 +138,7 @@ export function discountText(ctx: RenderCtx, item: Invoice['items'][number], lin
 export function standardColumns(ctx: RenderCtx, o: { index?: boolean; descClass?: string; nameClass?: string; sku?: boolean } = {}): Column[] {
   const cols: Column[] = []
   if (o.index) cols.push({ key: 'n', label: '#', width: '5%', render: (_i, _l, idx) => idx + 1 })
-  cols.push({ key: 'item', label: 'Description', render: (it) => <ItemName ctx={ctx} item={it} nameClass={o.nameClass ?? 'font-medium'} descClass={o.descClass ?? 'text-[11px] opacity-70 mt-0.5'} showSku={o.sku ?? true} /> })
+  cols.push({ key: 'item', label: 'Description', render: (it) => <ItemName ctx={ctx} item={it} nameClass={o.nameClass ?? 'font-medium'} descClass={o.descClass ?? 'text-[11px] text-[#6b7280] mt-0.5'} showSku={o.sku ?? true} /> })
   cols.push({ key: 'qty', label: 'Qty', align: 'right', width: ctx.has.unit ? '11%' : '8%', render: (it) => qtyText(ctx, it) })
   cols.push({ key: 'price', label: 'Rate', align: 'right', width: '15%', render: (it) => ctx.money(it.unitPrice) })
   if (ctx.has.discount) cols.push({ key: 'disc', label: 'Disc.', align: 'right', width: '10%', render: (it, l) => discountText(ctx, it, l) })
@@ -164,8 +176,8 @@ export function TotalsTable({ ctx, className, rowClass, strongClass, width = 300
       <tbody>
         {totalsRows(ctx).map((r, i) => (
           <tr key={i} className={r.strong ? strongClass : rowClass}>
-            <td className={cx('py-1 pr-4', r.muted && 'opacity-70')}>{r.label}</td>
-            <td className={cx('py-1 text-right tabular-nums whitespace-nowrap', r.muted && 'opacity-70')}>{r.value}</td>
+            <td className={cx('py-1 pr-4', r.muted && 'text-[#6b7280]')}>{r.label}</td>
+            <td className={cx('py-1 text-right tabular-nums whitespace-nowrap', r.muted && 'text-[#6b7280]')}>{r.value}</td>
           </tr>
         ))}
       </tbody>

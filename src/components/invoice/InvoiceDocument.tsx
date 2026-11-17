@@ -5,8 +5,12 @@ import { formatMoney } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
 import { useTemplate } from '@/templates/registry'
 import { PAGE_PX, type RenderCtx, type TemplateDef, type Column } from '@/templates/types'
+import { readableOn } from '@/templates/shared'
 
 export interface PagePlan { rows: [number, number]; summary: number[]; first: boolean }
+
+const samePlan = (a: PagePlan[], b: PagePlan[]) =>
+  a.length === b.length && a.every((p, i) => p.rows[0] === b[i].rows[0] && p.rows[1] === b[i].rows[1] && p.summary.join() === b[i].summary.join())
 
 export function buildCtx(inv: Invoice, prefs: Pick<UserPreferences, 'dateFormat' | 'locale'>, tpl: TemplateDef): RenderCtx {
   const totals = calculateTotals(inv)
@@ -17,6 +21,7 @@ export function buildCtx(inv: Invoice, prefs: Pick<UserPreferences, 'dateFormat'
     money: (m) => formatMoney(m, inv.currency),
     date: (iso) => formatDate(iso, prefs.dateFormat, prefs.locale),
     accent: inv.accentColor || tpl.accent,
+    onAccent: readableOn(inv.accentColor || tpl.accent),
     has: {
       sku: inv.items.some((i) => i.sku),
       unit: inv.items.some((i) => i.unit),
@@ -46,7 +51,9 @@ export function paginate(m: { avail: number; header: number; cont: number; thead
   m.rows.forEach((h, i) => {
     const need = h + (hasRows ? 0 : m.thead)
     const empty = used <= (cur.first ? m.header : m.cont) && !hasRows
-    if (used + need > m.avail && !empty) newPage()
+    // A row that doesn't fit under the big first-page header moves to page 2 if it fits there.
+    const fitsNext = m.cont + h + m.thead <= m.avail
+    if (used + need > m.avail && (!empty || (cur.first && fitsNext && cur.summary.length === 0))) newPage()
     cur.rows = [cur.rows[0], i + 1]
     used += need
     hasRows = true
@@ -107,7 +114,7 @@ function Page({ tpl, ctx, size, page, pageCount, children, className }: { tpl: T
   return (
     <div
       className={`invoice-page relative overflow-hidden bg-white ${tpl.rootClass} ${className ?? ''}`}
-      style={{ width: size.w, height: size.h, ['--accent' as string]: ctx.accent }}
+      style={{ width: size.w, height: size.h, ['--accent' as string]: ctx.accent, ['--on-accent' as string]: ctx.onAccent }}
       data-page={page}
     >
       {Bg && <Bg ctx={ctx} page={page} pageCount={pageCount} />}
@@ -128,7 +135,9 @@ function DocumentInner({ invoice, prefs, pageGap = 24, className, onReady, pageC
   const [plan, setPlan] = useState<{ key: string; pages: PagePlan[] } | null>(null)
   const cols = useMemo(() => (tpl && ctx ? tpl.columns(ctx) : []), [tpl, ctx])
   const summary = useMemo(() => (tpl && ctx ? tpl.summary(ctx) : []), [tpl, ctx])
-  const key = useMemo(() => `${invoice.template}|${invoice.paperSize}|${invoice.updatedAt}|${invoice.items.length}|${summary.length}`, [invoice, summary.length])
+  const key = `${invoice.template}|${invoice.paperSize}|${invoice.items.length}|${summary.length}`
+  const planRef = useRef(plan)
+  planRef.current = plan
 
   // Measure → paginate. Re-runs when content changes and when images (logo) finish loading.
   useLayoutEffect(() => {
@@ -146,7 +155,7 @@ function DocumentInner({ invoice, prefs, pageGap = 24, className, onReady, pageC
         rows: [...root.querySelectorAll<HTMLElement>('[data-m="table"] tr[data-row]')].map(h),
         summary: [...root.querySelectorAll<HTMLElement>('[data-m="summary"] > div')].map((e) => h(e)),
       }, tpl.gap)
-      setPlan((prev) => (prev && prev.key === key && JSON.stringify(prev.pages) === JSON.stringify(pages) ? prev : { key, pages }))
+      setPlan((prev) => (prev && prev.key === key && samePlan(prev.pages, pages) ? prev : { key, pages }))
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -157,13 +166,23 @@ function DocumentInner({ invoice, prefs, pageGap = 24, className, onReady, pageC
   }, [tpl, ctx, key, size.h])
 
   const ready = !!(plan && plan.key === key && tpl && ctx)
+  const fired = useRef(false)
   useLayoutEffect(() => {
-    if (!ready || !onReady || !pagesRef.current) return
-    const els = [...pagesRef.current.querySelectorAll<HTMLElement>('.invoice-page')]
-    const imgs = [...pagesRef.current.querySelectorAll('img')]
-    Promise.all(imgs.map((i) => (i.complete ? Promise.resolve() : new Promise((r) => { i.onload = i.onerror = r }))))
+    if (!ready || !onReady || !pagesRef.current || fired.current) return
+    const host = pagesRef.current
+    const startPlan = plan
+    let cancelled = false
+    const settle = (img: HTMLImageElement) => Promise.race([img.decode().catch(() => undefined), new Promise((r) => setTimeout(r, 3000))])
+    Promise.all([...host.querySelectorAll('img')].map(settle))
       .then(() => document.fonts?.ready)
-      .then(() => onReady(els))
+      .then(() => new Promise((r) => requestAnimationFrame(() => r(null))))
+      .then(() => {
+        // If fonts/images changed the layout, a new plan will re-run this effect instead.
+        if (cancelled || fired.current || planRef.current !== startPlan) return
+        fired.current = true
+        onReady([...host.querySelectorAll<HTMLElement>('.invoice-page')])
+      })
+    return () => { cancelled = true }
   }, [ready, onReady, plan])
 
   if (!tpl || !ctx) return <div className="flex items-center justify-center text-sm text-[#6B7280]" style={{ height: size.h / 3 }}>Loading template…</div>
@@ -176,7 +195,7 @@ function DocumentInner({ invoice, prefs, pageGap = 24, className, onReady, pageC
   return (
     <div className={className} style={{ position: 'relative', overflow: 'hidden' }}>
       {/* Hidden measurement layer at true content width */}
-      <div aria-hidden ref={measureRef} className={tpl.rootClass} style={{ position: 'absolute', left: -100000, top: 0, width: contentW, visibility: 'hidden', pointerEvents: 'none', ['--accent' as string]: ctx.accent }}>
+      <div aria-hidden ref={measureRef} className={tpl.rootClass} style={{ position: 'absolute', left: -100000, top: 0, width: contentW, visibility: 'hidden', pointerEvents: 'none', ['--accent' as string]: ctx.accent, ['--on-accent' as string]: ctx.onAccent }}>
         <div data-m="header"><H ctx={ctx} /></div>
         <div data-m="cont"><C ctx={ctx} page={2} /></div>
         <div data-m="table"><ItemsTable tpl={tpl} ctx={ctx} cols={cols} from={0} to={invoice.items.length} /></div>

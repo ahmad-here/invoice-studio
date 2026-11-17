@@ -48,7 +48,7 @@ const creative: TemplateDef = {
         {totalsRows(ctx).filter((r) => !r.strong).map((r, i) => (
           <div key={i} className={cx('flex justify-between py-1', r.muted && 'text-[#6b7280]')}><span>{r.label}</span><span className="tabular-nums">{r.value}</span></div>
         ))}
-        <div className="mt-3 rounded-xl px-4 py-3 text-white flex justify-between items-baseline" style={{ background: ctx.accent }}>
+        <div className="mt-3 rounded-xl px-4 py-3 text-[var(--on-accent)] flex justify-between items-baseline" style={{ background: ctx.accent }}>
           <span className="font-bold">{ctx.totals.amountPaid ? 'Balance due' : 'Total due'}</span>
           <span className="text-[18px] font-black tabular-nums">{amountDue(ctx)}</span>
         </div>

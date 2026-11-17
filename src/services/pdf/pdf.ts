@@ -5,22 +5,22 @@ import { renderOffscreen } from './render'
 
 type Prefs = Pick<UserPreferences, 'dateFormat' | 'locale'>
 
-let fontCss: Promise<string> | null = null
+const fontCss = new Map<string, Promise<string>>()
 let libs: Promise<[typeof import('jspdf'), typeof import('html-to-image')]> | null = null
 const loadLibs = () => (libs ??= Promise.all([import('jspdf'), import('html-to-image')]))
 
 const FORMAT: Record<PaperSize, string> = { A4: 'a4', Letter: 'letter', Legal: 'legal' }
 
 /** Rasterise page elements at 2× into JPEG pages. Fonts are embedded once and reused (fast for bulk). */
-async function addPages(doc: JsPDF | null, pages: HTMLElement[], paper: PaperSize): Promise<JsPDF> {
+async function addPages(doc: JsPDF | null, pages: HTMLElement[], paper: PaperSize, fontKey: string): Promise<JsPDF> {
   const [{ jsPDF }, h2i] = await loadLibs()
-  fontCss ??= h2i.getFontEmbedCSS(pages[0]).catch(() => '')
-  const fontEmbedCSS = await fontCss
+  if (!fontCss.has(fontKey)) fontCss.set(fontKey, h2i.getFontEmbedCSS(pages[0]).catch(() => ''))
+  const fontEmbedCSS = await fontCss.get(fontKey)!
   const { mm, w, h } = PAGE_PX[paper]
   let pdf = doc
   for (const el of pages) {
     const canvas = await h2i.toCanvas(el, { pixelRatio: 2, backgroundColor: '#ffffff', fontEmbedCSS, width: w, height: h, cacheBust: false })
-    const data = canvas.toDataURL('image/jpeg', 0.9)
+    const data = canvas.toDataURL('image/jpeg', 0.88)
     if (!pdf) pdf = new jsPDF({ unit: 'mm', format: FORMAT[paper], compress: true })
     else pdf.addPage(FORMAT[paper], 'portrait')
     pdf.addImage(data, 'JPEG', 0, 0, mm[0], mm[1], undefined, 'FAST')
@@ -36,7 +36,7 @@ function setMeta(pdf: JsPDF, inv: Invoice) {
 export async function invoiceToPdfBlob(inv: Invoice, prefs: Prefs): Promise<Blob> {
   const { pages, cleanup } = await renderOffscreen(inv, prefs)
   try {
-    const pdf = await addPages(null, pages, inv.paperSize)
+    const pdf = await addPages(null, pages, inv.paperSize, inv.template)
     setMeta(pdf, inv)
     return pdf.output('blob')
   } finally {
@@ -51,7 +51,7 @@ export async function combinedPdfBlob(list: Invoice[], prefs: Prefs, onProgress?
     if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError')
     const { pages, cleanup } = await renderOffscreen(list[i], prefs)
     try {
-      pdf = await addPages(pdf, pages, list[i].paperSize)
+      pdf = await addPages(pdf, pages, list[i].paperSize, list[i].template)
     } finally {
       cleanup()
     }

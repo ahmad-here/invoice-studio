@@ -8,6 +8,8 @@ export interface RenderCtx {
   money: (m: Minor) => string
   date: (iso: string) => string
   accent: string
+  /** text colour with ≥4.5:1 contrast on the accent (white or ink) */
+  onAccent: string
   /** which optional item columns carry data */
   has: { sku: boolean; unit: boolean; discount: boolean; tax: boolean; description: boolean }
 }

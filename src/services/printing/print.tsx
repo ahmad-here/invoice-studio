@@ -11,6 +11,8 @@ import { isNative, saveFile } from '@/services/files'
  * native print dialog. Print CSS hides the app (see styles/index.css) and sets @page size.
  * Android WebView has no window.print(), so on native we hand the PDF to the share sheet.
  */
+let activeCleanup: (() => void) | null = null
+
 export async function printInvoice(inv: Invoice, prefs: Pick<UserPreferences, 'dateFormat' | 'locale'>): Promise<void> {
   if (isNative()) {
     const blob = await invoiceToPdfBlob(inv, prefs)
@@ -18,8 +20,7 @@ export async function printInvoice(inv: Invoice, prefs: Pick<UserPreferences, 'd
     return
   }
   await loadTemplate(inv.template)
-  document.getElementById('print-root')?.remove()
-  document.getElementById('print-page-style')?.remove()
+  activeCleanup?.()
   const host = document.createElement('div')
   host.id = 'print-root'
   document.body.appendChild(host)
@@ -35,13 +36,16 @@ export async function printInvoice(inv: Invoice, prefs: Pick<UserPreferences, 'd
   })
   await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 50)))
   const cleanup = () => {
+    if (activeCleanup !== cleanup) return
+    activeCleanup = null
     root.unmount()
     host.remove()
     style.remove()
     window.removeEventListener('afterprint', cleanup)
   }
+  activeCleanup = cleanup
   window.addEventListener('afterprint', cleanup)
   window.print()
   // Safari/Firefox may not fire afterprint reliably
-  setTimeout(() => document.getElementById('print-root') && !matchMedia('print').matches && cleanup(), 60_000)
+  setTimeout(() => { if (!matchMedia('print').matches) cleanup() }, 60_000)
 }

@@ -10,15 +10,15 @@ const corporate: TemplateDef = {
   rootClass: 'font-sans text-[11.5px] leading-[1.5] text-[#202938]',
   Header: ({ ctx }) => (
     <div className="pb-6">
-      <div className="-mx-[48px] px-[48px] pt-10 pb-8 text-white flex justify-between items-start gap-8" style={{ background: ctx.accent }}>
+      <div className="-mx-[48px] px-[48px] pt-10 pb-8 text-[var(--on-accent)] flex justify-between items-start gap-8" style={{ background: ctx.accent }}>
         <div className="min-w-0">
           {ctx.inv.business.logo && <div className="bg-white rounded-md p-2 inline-block mb-3"><Logo ctx={ctx} max={56} /></div>}
           <div className="text-[18px] font-bold">{ctx.inv.business.name}</div>
-          <BusinessLines ctx={ctx} showName={false} className="text-[11px] text-white/85" />
+          <BusinessLines ctx={ctx} showName={false} className="text-[11px] text-[var(--on-accent)]" />
         </div>
         <div className="text-right shrink-0">
           <div className="text-[34px] font-extrabold uppercase leading-none tracking-wide">{ctx.inv.title || 'Invoice'}</div>
-          <div className="mt-2 text-[13px] text-white/90">No. {ctx.inv.number}</div>
+          <div className="mt-2 text-[13px] text-[var(--on-accent)]">No. {ctx.inv.number}</div>
         </div>
       </div>
       <div className="grid grid-cols-[1fr_1fr_1.1fr] gap-6 pt-7">
@@ -38,12 +38,12 @@ const corporate: TemplateDef = {
     </div>
   ),
   ContHeader: ({ ctx, page }) => (
-    <div className="-mx-[48px] px-[48px] py-3 mb-5 text-white text-[11px] flex justify-between" style={{ background: ctx.accent }}><span className="font-semibold">{ctx.inv.business.name}</span><span>Invoice {ctx.inv.number} · page {page}</span></div>
+    <div className="-mx-[48px] px-[48px] py-3 mb-5 text-[var(--on-accent)] text-[11px] flex justify-between" style={{ background: ctx.accent }}><span className="font-semibold">{ctx.inv.business.name}</span><span>Invoice {ctx.inv.number} · page {page}</span></div>
   ),
   columns: (ctx) => standardColumns(ctx, { index: true }),
   table: {
     className: 'w-full',
-    theadClass: 'text-white [&_th]:bg-[var(--accent)]',
+    theadClass: 'text-[var(--on-accent)] [&_th]:bg-[var(--accent)]',
     thClass: 'px-3 py-2 text-[10.5px] font-semibold uppercase tracking-wide',
     tdClass: 'px-3 py-2.5 align-top border-b border-[#e5e7eb]',
     rowClass: (i) => (i % 2 ? 'bg-[#F7F9FC]' : ''),
@@ -51,7 +51,7 @@ const corporate: TemplateDef = {
   summary: (ctx) => [
     <div key="t" className="ml-auto w-[320px]">
       {totalsRows(ctx).map((r, i) => (
-        <div key={i} className={cx('flex justify-between px-3 py-1.5', r.strong ? 'text-white font-bold text-[13.5px] mt-1 rounded-sm' : 'border-b border-[#e5e7eb]', r.muted && 'text-[#6b7280]')} style={r.strong ? { background: ctx.accent } : undefined}>
+        <div key={i} className={cx('flex justify-between px-3 py-1.5', r.strong ? 'text-[var(--on-accent)] font-bold text-[13.5px] mt-1 rounded-sm' : 'border-b border-[#e5e7eb]', r.muted && 'text-[#6b7280]')} style={r.strong ? { background: ctx.accent } : undefined}>
           <span>{r.label}</span><span className="tabular-nums">{r.value}</span>
         </div>
       ))}

@@ -30,8 +30,9 @@ export const storage = {
   async getInvoice(id: string): Promise<Invoice | null> {
     return migrateInvoice(await (await db()).get('invoices', id))
   },
+  /** Persists exactly what it is given; the store owns updatedAt. */
   async saveInvoice(inv: Invoice): Promise<void> {
-    await (await db()).put('invoices', { ...inv, updatedAt: Date.now() })
+    await (await db()).put('invoices', inv)
   },
   async saveInvoices(list: Invoice[]): Promise<void> {
     const tx = (await db()).transaction('invoices', 'readwrite')
@@ -39,10 +40,6 @@ export const storage = {
   },
   async deleteInvoice(id: string): Promise<void> {
     await (await db()).delete('invoices', id)
-  },
-  async numberExists(number: string, exceptId?: string): Promise<boolean> {
-    const all = await (await db()).getAll('invoices')
-    return all.some((i) => i.number === number && i.id !== exceptId)
   },
   async getPrefs(): Promise<UserPreferences> {
     return migratePrefs(await (await db()).get('kv', 'prefs'))
@@ -63,22 +60,24 @@ export const storage = {
   async saveBusinesses(list: BusinessProfile[]): Promise<void> {
     await (await db()).put('kv', list, 'businesses')
   },
-  async getEditorDraft(): Promise<Invoice | null> {
-    return migrateInvoice(await (await db()).get('kv', 'editorDraft'))
+  /** Unsaved editor work, one slot per invoice (`new` for an unsaved new invoice). */
+  async getEditorDraft(key: string): Promise<Invoice | null> {
+    return migrateInvoice(await (await db()).get('kv', `editorDraft:${key}`))
   },
-  async saveEditorDraft(inv: Invoice | null): Promise<void> {
+  async saveEditorDraft(key: string, inv: Invoice | null): Promise<void> {
     const d = await db()
-    if (inv) await d.put('kv', inv, 'editorDraft')
-    else await d.delete('kv', 'editorDraft')
+    if (inv) await d.put('kv', inv, `editorDraft:${key}`)
+    else await d.delete('kv', `editorDraft:${key}`)
   },
   async exportBackup(): Promise<BackupFile> {
+    const businesses = await this.getBusinesses()
     return {
       app: 'invoice-studio',
       schemaVersion: SCHEMA_VERSION,
       exportedAt: new Date().toISOString(),
       preferences: await this.getPrefs(),
-      business: (await this.getBusinesses())[0] ?? emptyBusiness(),
-      businesses: await this.getBusinesses(),
+      business: businesses[0] ?? emptyBusiness(),
+      businesses,
       invoices: await this.listInvoices(),
     }
   },

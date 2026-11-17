@@ -28,6 +28,14 @@ const TABS = [
 ] as const
 type Tab = (typeof TABS)[number]['id']
 
+/** Which editor tab owns a validation message. */
+function tabForError(e: string): Tab {
+  if (/customer/i.test(e)) return 'parties'
+  if (/line item/i.test(e)) return 'items'
+  if (/custom field/i.test(e)) return 'extras'
+  return 'details'
+}
+
 /** Problems that block saving as a completed invoice. */
 function validate(inv: Invoice, duplicate: boolean): string[] {
   const e: string[] = []
@@ -49,7 +57,7 @@ export default function EditorPage() {
   const templateParam = TEMPLATES.find((t) => t.id === search.get('template'))?.id
   const { prefs, business, businesses, invoices, saveInvoice, saveBusiness, nextNumber } = useApp()
   const [inv, setInv] = useState<Invoice | null>(null)
-  const [savedSnapshot, setSavedSnapshot] = useState<string>('')
+  const [dirty, setDirty] = useState(false)
   const [restored, setRestored] = useState(false)
   const [tab, setTab] = useState<Tab>('details')
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit')
@@ -57,30 +65,30 @@ export default function EditorPage() {
   const [saving, setSaving] = useState(false)
   const [confirmNew, setConfirmNew] = useState(false)
   const { busy, downloadPdf, print } = useInvoiceActions()
-  const isSaved = useMemo(() => !!inv && invoices.some((i) => i.id === inv.id), [inv, invoices])
+  const invId = inv?.id
+  const isSaved = useMemo(() => !!invId && invoices.some((i) => i.id === invId), [invId, invoices])
+  const draftKey = id ?? 'new'
 
   // Load: saved invoice by id, else restore autosaved draft, else new invoice.
   useEffect(() => {
     let live = true
     ;(async () => {
-      const draft = await storage.getEditorDraft().catch(() => null)
+      const draft = await storage.getEditorDraft(id ?? 'new').catch(() => null)
       let next: Invoice
-      let snap = ''
+      let fromDraft = false
       if (id) {
         const saved = invoices.find((i) => i.id === id) ?? (await storage.getInvoice(id))
         if (!saved) { toast.error('That invoice no longer exists.'); nav('/invoices', { replace: true }); return }
-        snap = JSON.stringify(saved)
-        if (draft && draft.id === id && draft.updatedAt > saved.updatedAt && JSON.stringify(draft) !== snap) { next = draft; setRestored(true) }
+        if (draft && draft.id === id && draft.updatedAt > saved.updatedAt) { next = draft; fromDraft = true }
         else next = saved
       } else if (draft && !invoices.some((i) => i.id === draft.id)) {
         next = draft
-        setRestored(true)
+        fromDraft = true
       } else {
         next = createInvoice(prefs, business, nextNumber())
-        snap = JSON.stringify(next)
       }
-      if (next && templateParam && !id) next = { ...next, template: templateParam, accentColor: undefined }
-      if (live) { setInv(next); setSavedSnapshot(snap) }
+      if (templateParam && !id) next = { ...next, template: templateParam, accentColor: undefined }
+      if (live) { setInv(next); setDirty(fromDraft); setRestored(fromDraft); setErrors([]) }
     })()
     return () => { live = false }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -88,18 +96,34 @@ export default function EditorPage() {
 
   const update: Update = useCallback((patch) => {
     setInv((cur) => (cur ? { ...cur, ...(typeof patch === 'function' ? patch(cur) : patch), updatedAt: Date.now() } : cur))
+    setDirty(true)
   }, [])
 
-  const dirty = !!inv && JSON.stringify(inv) !== savedSnapshot
-
-  // Autosave work-in-progress (debounced) so a refresh or crash never loses data.
+  // Autosave work-in-progress (debounced, per invoice) so a refresh, crash or navigation never loses data.
   const timer = useRef<number | undefined>(undefined)
+  const pending = useRef<(() => void) | null>(null)
+  const warned = useRef(false)
   useEffect(() => {
-    if (!inv) return
+    if (!inv || !dirty) return
+    const write = () => {
+      pending.current = null
+      storage.saveEditorDraft(draftKey, inv).catch((e) => {
+        if (!warned.current) { warned.current = true; toast.error(`Autosave failed (${(e as Error).message}). Save your invoice to keep changes.`) }
+      })
+    }
+    pending.current = write
     window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(() => { storage.saveEditorDraft(dirty ? inv : null).catch(() => undefined) }, 500)
+    timer.current = window.setTimeout(write, 1500)
     return () => window.clearTimeout(timer.current)
-  }, [inv, dirty])
+  }, [inv, dirty, draftKey])
+  // Flush pending autosave when leaving the page or the editor
+  useEffect(() => {
+    const flush = () => pending.current?.()
+    const vis = () => { if (document.visibilityState === 'hidden') flush() }
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', vis)
+    return () => { flush(); window.removeEventListener('pagehide', flush); document.removeEventListener('visibilitychange', vis) }
+  }, [])
 
   useEffect(() => {
     const h = (e: BeforeUnloadEvent) => { if (dirty) { e.preventDefault() } }
@@ -109,7 +133,9 @@ export default function EditorPage() {
 
   const deferred = useDeferredValue(inv)
   const totals = useMemo(() => (inv ? calculateTotals(inv) : null), [inv])
-  const duplicateNumber = !!inv && invoices.some((i) => i.number === inv.number.trim() && i.id !== inv.id)
+  const numberOwner = useMemo(() => new Map(invoices.map((i) => [i.number, i.id])), [invoices])
+  const owner = inv ? numberOwner.get(inv.number.trim()) : undefined
+  const duplicateNumber = !!owner && owner !== inv?.id
 
   if (!inv || !totals || !deferred) return <Spinner label="Loading invoice" />
 
@@ -121,13 +147,15 @@ export default function EditorPage() {
     setSaving(true)
     try {
       const toSave: Invoice = { ...inv, number: inv.number.trim(), status: !asDraft && inv.status === 'draft' ? 'sent' : inv.status }
-      await saveInvoice(toSave)
-      await storage.saveEditorDraft(null)
-      setInv(toSave)
-      setSavedSnapshot(JSON.stringify(toSave))
+      window.clearTimeout(timer.current)
+      pending.current = null
+      const saved = await saveInvoice(toSave)
+      await Promise.all([storage.saveEditorDraft(draftKey, null), storage.saveEditorDraft(saved.id, null)]).catch(() => undefined)
+      setInv(saved)
+      setDirty(false)
       setRestored(false)
       toast.success(asDraft ? 'Draft saved.' : `Invoice ${toSave.number} saved.`)
-      if (!id) nav(`/edit/${toSave.id}`, { replace: true })
+      if (!id) nav(`/edit/${saved.id}`, { replace: true })
     } catch (e) {
       toast.error(`Could not save: ${(e as Error).message}`)
     } finally {
@@ -136,11 +164,13 @@ export default function EditorPage() {
   }
 
   const startNew = async () => {
-    await storage.saveEditorDraft(null)
+    window.clearTimeout(timer.current)
+    pending.current = null
+    await storage.saveEditorDraft(draftKey, null).catch(() => undefined)
     setConfirmNew(false)
     const fresh = createInvoice(prefs, business, nextNumber())
     setInv(fresh)
-    setSavedSnapshot(JSON.stringify(fresh))
+    setDirty(false)
     setRestored(false)
     setErrors([])
     setTab('details')
@@ -148,22 +178,31 @@ export default function EditorPage() {
   }
 
   const discardRestore = async () => {
-    await storage.saveEditorDraft(null)
+    window.clearTimeout(timer.current)
+    pending.current = null
+    await storage.saveEditorDraft(draftKey, null).catch(() => undefined)
     if (id) {
-      const saved = invoices.find((i) => i.id === id)
-      if (saved) { setInv(saved); setSavedSnapshot(JSON.stringify(saved)) }
+      const saved = invoices.find((i) => i.id === id) ?? (await storage.getInvoice(id))
+      if (saved) setInv(saved)
     } else {
-      const fresh = createInvoice(prefs, business, nextNumber())
-      setInv(fresh)
-      setSavedSnapshot(JSON.stringify(fresh))
+      setInv(createInvoice(prefs, business, nextNumber()))
     }
+    setDirty(false)
     setRestored(false)
   }
 
   const tplName = TEMPLATES.find((t) => t.id === inv.template)?.name
+  const onTabKey = (e: React.KeyboardEvent) => {
+    const i = TABS.findIndex((t) => t.id === tab)
+    const next = e.key === 'ArrowRight' ? (i + 1) % TABS.length : e.key === 'ArrowLeft' ? (i - 1 + TABS.length) % TABS.length : e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : -1
+    if (next < 0) return
+    e.preventDefault()
+    setTab(TABS[next].id)
+    document.getElementById(`tab-${TABS[next].id}`)?.focus()
+  }
 
   return (
-    <div>
+    <div className="pb-16 lg:pb-0">
       {/* Toolbar */}
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
@@ -177,8 +216,8 @@ export default function EditorPage() {
           <Button size="md" variant="ghost" icon={<FilePlus2 className="size-4" />} onClick={() => (dirty ? setConfirmNew(true) : startNew())}>New</Button>
           <Button icon={<Printer className="size-4" />} loading={busy === `print:${inv.id}`} onClick={() => print(inv)}>Print</Button>
           <Button icon={<Download className="size-4" />} loading={busy === `pdf:${inv.id}`} onClick={() => downloadPdf(inv)}>PDF</Button>
-          <Button onClick={() => save(true)} loading={saving}>Save draft</Button>
-          <Button variant="primary" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving}>Save invoice</Button>
+          <Button onClick={() => save(true)} loading={saving} title="Save without validation to finish later">Save as draft</Button>
+          <Button variant="primary" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving} className="hidden lg:inline-flex">Save invoice</Button>
         </div>
       </div>
 
@@ -189,9 +228,11 @@ export default function EditorPage() {
         </div>
       )}
       {errors.length > 0 && (
-        <div role="alert" className="mb-4 rounded-lg border border-[#f5c2c7] bg-danger-50 px-4 py-3 text-sm text-danger">
+        <div role="alert" className="mb-4 rounded-lg border border-danger/30 bg-danger-50 px-4 py-3 text-sm text-danger">
           <p className="font-medium">Please fix the following before saving:</p>
-          <ul className="mt-1 list-disc pl-5">{errors.map((e) => <li key={e}>{e}</li>)}</ul>
+          <ul className="mt-1 list-disc pl-5">{errors.map((e) => (
+            <li key={e}><button type="button" className="text-left underline underline-offset-2 hover:no-underline" onClick={() => { setTab(tabForError(e)); setMobileView('edit') }}>{e} <span className="whitespace-nowrap">— go to {TABS.find((t) => t.id === tabForError(e))?.label}</span></button></li>
+          ))}</ul>
         </div>
       )}
 
@@ -202,13 +243,16 @@ export default function EditorPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         <div className={cx('min-w-0', mobileView === 'preview' && 'hidden lg:block')}>
-          <div role="tablist" aria-label="Invoice sections" className="sticky top-16 z-20 -mx-4 mb-4 flex gap-1 overflow-x-auto bg-canvas/95 px-4 py-2 backdrop-blur scrollbar-thin sm:mx-0 sm:rounded-xl sm:border sm:border-line sm:bg-white sm:p-1">
-            {TABS.map((t) => (
-              <button key={t.id} role="tab" aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} id={`tab-${t.id}`} onClick={() => setTab(t.id)}
-                className={cx('shrink-0 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors', tab === t.id ? 'bg-primary text-white shadow-xs' : 'text-muted hover:bg-canvas hover:text-ink')}>
-                {t.label}
-              </button>
-            ))}
+          <div role="tablist" aria-label="Invoice sections" onKeyDown={onTabKey} className="sticky top-16 z-20 -mx-4 mb-4 flex gap-1 overflow-x-auto bg-canvas/95 px-4 py-2 backdrop-blur scrollbar-thin [mask-image:linear-gradient(to_right,black_88%,transparent)] sm:mx-0 sm:rounded-xl sm:border sm:border-line sm:bg-white sm:p-1 sm:[mask-image:none]">
+            {TABS.map((t) => {
+              const hasErr = errors.some((e) => tabForError(e) === t.id)
+              return (
+                <button key={t.id} role="tab" aria-selected={tab === t.id} tabIndex={tab === t.id ? 0 : -1} aria-controls={`panel-${t.id}`} id={`tab-${t.id}`} onClick={() => setTab(t.id)}
+                  className={cx('flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors', tab === t.id ? 'bg-primary text-white shadow-xs' : 'text-muted hover:bg-canvas hover:text-ink')}>
+                  {t.label}{hasErr && <span className="size-1.5 rounded-full bg-danger" aria-label="has errors" />}
+                </button>
+              )
+            })}
           </div>
           <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="space-y-4">
             {tab === 'details' && <DetailsSection inv={inv} update={update} numberError={duplicateNumber ? 'This number is already used by a saved invoice' : null} />}
@@ -250,8 +294,14 @@ export default function EditorPage() {
         </div>
       </div>
 
-      <ConfirmDialog open={confirmNew} title="Start a new invoice?" danger={false} confirmLabel="Discard & start new"
-        message="You have unsaved changes on this invoice. They will be discarded." onCancel={() => setConfirmNew(false)} onConfirm={startNew} />
+      {/* Mobile sticky action bar: total + primary save always reachable */}
+      <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t border-line bg-white px-4 py-2 shadow-[0_-4px_12px_rgb(16_24_40/0.06)] lg:hidden">
+        <div className="min-w-0 flex-1"><div className="text-[11px] text-muted">Total</div><div className="truncate text-[15px] font-semibold tabular">{formatMoney(totals.grandTotal, inv.currency)}</div></div>
+        <Button variant="primary" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving}>Save invoice</Button>
+      </div>
+
+      <ConfirmDialog open={confirmNew} title="Start a new invoice?" confirmLabel="Discard changes"
+        message={`Your unsaved changes to ${inv.number || 'this invoice'} will be lost.`} onCancel={() => setConfirmNew(false)} onConfirm={startNew} />
     </div>
   )
 }

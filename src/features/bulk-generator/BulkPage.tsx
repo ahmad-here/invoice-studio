@@ -154,9 +154,13 @@ export default function BulkPage() {
   })
 
   const saveAll = async () => {
-    await saveMany(chosen.map((i) => ({ ...i, updatedAt: Date.now() })))
+    const existing = new Set(useApp.getState().invoices.map((i) => i.number))
+    const fresh = chosen.filter((i) => !existing.has(i.number))
+    const skipped = chosen.length - fresh.length
+    if (fresh.length) await saveMany(fresh)
     setSavedOnce(true)
-    toast.success(`${chosen.length} invoices saved to Saved Invoices.`)
+    if (fresh.length) toast.success(`${fresh.length} invoice${fresh.length === 1 ? '' : 's'} saved to Saved Invoices.${skipped ? ` ${skipped} skipped — number already exists.` : ''}`)
+    else toast.info('Nothing saved — every selected invoice number already exists in Saved Invoices.')
   }
 
   const reset = () => { setParsed(null); setSelected(new Set()); setFileError(null) }

@@ -49,7 +49,7 @@ const modern: TemplateDef = {
       <div className="min-w-0">{hasPayment(ctx) && <PaymentBlock ctx={ctx} className="rounded-xl border border-[#E5E7EB] p-4" titleClass="text-[10px] font-semibold uppercase tracking-wider mb-1 text-[var(--accent)]" labelClass="text-[#6b7280]" />}</div>
       <div className="rounded-xl border border-[#E5E7EB] overflow-hidden">
         {totalsRows(ctx).map((r, i) => (
-          <div key={i} className={cx('flex justify-between px-4 py-1.5', r.strong ? 'bg-[var(--accent)] text-white font-bold text-[13px] py-2.5' : '', r.muted && 'text-[#6b7280]')}>
+          <div key={i} className={cx('flex justify-between px-4 py-1.5', r.strong ? 'bg-[var(--accent)] text-[var(--on-accent)] font-bold text-[13px] py-2.5' : '', r.muted && 'text-[#6b7280]')}>
             <span>{r.label}</span><span className="tabular-nums">{r.value}</span>
           </div>
         ))}
