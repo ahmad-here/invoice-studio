@@ -32,3 +32,12 @@ test('PWA manifest and service worker are served', async ({ page, request }) => 
   // the worker must actually install + activate (precache incl. the /app.html fallback)
   await expect.poll(() => page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())?.active), { timeout: 30_000 }).toBe(true)
 })
+
+test('mobile: Next brings the next section into view', async ({ page }) => {
+  await page.goto('/create')
+  await page.getByRole('tab', { name: 'From & To' }).click()
+  const next = page.getByRole('button', { name: /^Next:/ })
+  await next.scrollIntoViewIfNeeded()
+  await next.click()
+  await expect(page.getByRole('heading', { name: 'Line items' })).toBeInViewport()
+})

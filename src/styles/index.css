@@ -59,6 +59,13 @@
 
 .scrollbar-thin { scrollbar-width: thin; }
 
+/* Editor section transitions: Next slides in from the right, Back from the left */
+@keyframes tab-in-right { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: none; } }
+@keyframes tab-in-left { from { opacity: 0; transform: translateX(-32px); } to { opacity: 1; transform: none; } }
+.tab-slide-right { animation: tab-in-right 240ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.tab-slide-left { animation: tab-in-left 240ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) { .tab-slide-right, .tab-slide-left { animation: none; } }
+
 /* ------------------------------ Print ------------------------------ */
 /* Off-screen (not display:none) so the paginator can measure before printing */
 #print-root { position: fixed; left: -100000px; top: 0; pointer-events: none; }

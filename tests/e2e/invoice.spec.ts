@@ -90,6 +90,21 @@ test.describe('invoice studio', () => {
     expect(overflow).toBe(false)
   })
 
+  test('Next scrolls to the next section and sections slide in the right direction', async ({ page }) => {
+    await page.goto('/create')
+    await page.getByRole('tab', { name: 'Extras' }).click()
+    const next = page.getByRole('button', { name: /^Next:/ })
+    await next.scrollIntoViewIfNeeded()
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(200)
+    await next.click()
+    await expect(page.getByRole('heading', { name: 'Template & layout' })).toBeInViewport()
+    // Back slides the previous section in from the left
+    await page.getByRole('button', { name: 'Back', exact: true }).click()
+    await expect(page.getByRole('tabpanel')).toHaveClass(/tab-slide-left/)
+    await page.getByRole('button', { name: /^Next:/ }).click()
+    await expect(page.getByRole('tabpanel')).toHaveClass(/tab-slide-right/)
+  })
+
   test('custom fields and sections render in preview', async ({ page }) => {
     await page.goto('/create')
     await page.getByRole('tab', { name: 'Extras' }).click()

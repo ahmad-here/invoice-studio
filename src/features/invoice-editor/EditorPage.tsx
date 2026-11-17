@@ -59,7 +59,14 @@ export default function EditorPage() {
   const [inv, setInv] = useState<Invoice | null>(null)
   const [dirty, setDirty] = useState(false)
   const [restored, setRestored] = useState(false)
-  const [tab, setTab] = useState<Tab>('details')
+  const [tab, setTabRaw] = useState<Tab>('details')
+  const [slide, setSlide] = useState<'left' | 'right' | null>(null)
+  /** Change section; forward moves slide in from the right, backward from the left. */
+  const setTab = (next: Tab) => {
+    const from = TABS.findIndex((t) => t.id === tab), to = TABS.findIndex((t) => t.id === next)
+    if (to !== from) setSlide(to > from ? 'right' : 'left')
+    setTabRaw(next)
+  }
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit')
   const [errors, setErrors] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
@@ -101,6 +108,7 @@ export default function EditorPage() {
 
   // Autosave work-in-progress (debounced, per invoice) so a refresh, crash or navigation never loses data.
   const timer = useRef<number | undefined>(undefined)
+  const formTop = useRef<HTMLDivElement>(null)
   const pending = useRef<(() => void) | null>(null)
   const warned = useRef(false)
   useEffect(() => {
@@ -243,7 +251,7 @@ export default function EditorPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
-        <div className={cx('min-w-0', mobileView === 'preview' && 'hidden lg:block')}>
+        <div ref={formTop} className={cx('min-w-0 scroll-mt-20 overflow-x-clip', mobileView === 'preview' && 'hidden lg:block')}>
           <div role="tablist" aria-label="Invoice sections" onKeyDown={onTabKey} className="sticky top-16 z-20 -mx-4 mb-4 flex snap-x gap-1 overflow-x-auto bg-canvas/95 px-4 py-2 backdrop-blur scrollbar-thin [mask-image:linear-gradient(to_right,black_88%,transparent)] sm:mx-0 sm:rounded-xl sm:border sm:border-line sm:bg-white sm:p-1 sm:[mask-image:none]">
             {TABS.map((t) => {
               const hasErr = errors.some((e) => tabForError(e) === t.id)
@@ -255,7 +263,7 @@ export default function EditorPage() {
               )
             })}
           </div>
-          <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="space-y-4">
+          <div key={tab} role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className={cx('space-y-4', slide && `tab-slide-${slide}`)}>
             {tab === 'details' && <DetailsSection inv={inv} update={update} numberError={duplicateNumber ? 'This number is already used by a saved invoice' : null} />}
             {tab === 'parties' && <>
               <CustomerSection inv={inv} update={update} />
@@ -281,7 +289,14 @@ export default function EditorPage() {
           <div className="mt-4 flex justify-between">
             {tab !== TABS[0].id ? <Button variant="ghost" onClick={() => setTab(TABS[TABS.findIndex((t) => t.id === tab) - 1].id)}>Back</Button> : <span />}
             {tab !== 'design'
-              ? <Button variant="secondary" onClick={() => setTab(TABS[TABS.findIndex((t) => t.id === tab) + 1].id)}>Next: {TABS[TABS.findIndex((t) => t.id === tab) + 1].label}</Button>
+              ? <Button variant="secondary" onClick={() => {
+                  setTab(TABS[TABS.findIndex((t) => t.id === tab) + 1].id)
+                  // Bring the next section's first field into view (only if we've scrolled past it)
+                  const el = formTop.current
+                  if (el && el.getBoundingClientRect().top < 0) {
+                    el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+                  }
+                }}>Next: {TABS[TABS.findIndex((t) => t.id === tab) + 1].label}</Button>
               : <Button variant="primary" onClick={() => save(false)} loading={saving}>Save invoice</Button>}
           </div>
         </div>
