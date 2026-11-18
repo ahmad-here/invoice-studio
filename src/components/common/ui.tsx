@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useId, useRef, type ButtonHTMLAttributes, type I
 import { createPortal } from 'react-dom'
 import { Loader2, X, CheckCircle2, AlertCircle, Info } from 'lucide-react'
 import { useToasts } from '@/app/store'
+import { haptic } from '@/services/native'
 
 export const cx = (...c: unknown[]) => c.filter((x) => typeof x === 'string' && x).join(' ')
 
@@ -26,9 +27,9 @@ export const buttonClass = ({ variant = 'secondary', size = 'md' }: { variant?: 
   cx('inline-flex items-center font-medium whitespace-nowrap transition-colors select-none', variants[variant], sizes[size])
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> { variant?: Variant; size?: Size; loading?: boolean; icon?: ReactNode }
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button({ variant = 'secondary', size = 'md', loading, icon, className, children, disabled, type = 'button', ...rest }, ref) {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button({ variant = 'secondary', size = 'md', loading, icon, className, children, disabled, type = 'button', onClick, ...rest }, ref) {
   return (
-    <button ref={ref} type={type} disabled={disabled || loading} className={cx('inline-flex items-center font-medium whitespace-nowrap transition-colors disabled:opacity-50 select-none', variants[variant], sizes[size], className)} {...rest}>
+    <button ref={ref} type={type} disabled={disabled || loading} onClick={(e) => { if (variant === 'primary' || variant === 'danger') haptic('light'); onClick?.(e) }} className={cx('inline-flex items-center font-medium whitespace-nowrap transition-[color,background-color,transform] active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 select-none', variants[variant], sizes[size], className)} {...rest}>
       {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : icon}
       {children}
     </button>
@@ -121,10 +122,10 @@ export const Card = ({ className, children }: { className?: string; children: Re
 
 export function PageHeader({ title, description, actions }: { title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="page-header mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
-        {description && <p className="mt-1 text-sm text-muted max-w-2xl">{description}</p>}
+        <h1 className="page-title text-2xl font-semibold tracking-tight text-ink">{title}</h1>
+        {description && <p className="app-hide mt-1 text-sm text-muted max-w-2xl">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </div>
@@ -201,7 +202,7 @@ export function ConfirmDialog({ open, title, message, confirmLabel = 'Delete', d
 export function Toaster() {
   const { toasts, dismiss } = useToasts()
   return (
-    <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-[calc(8rem+env(safe-area-inset-bottom))] lg:bottom-6 z-[60] flex flex-col items-center gap-2 px-4">
+    <div aria-live="polite" className="toaster pointer-events-none fixed inset-x-0 bottom-[calc(8rem+env(safe-area-inset-bottom))] lg:bottom-6 z-[60] flex flex-col items-center gap-2 px-4">
       {toasts.map((t) => (
         <div key={t.id} role={t.kind === 'error' ? 'alert' : 'status'} className="pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-xl border border-line bg-white px-4 py-3 shadow-lg">
           {t.kind === 'success' ? <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" /> : t.kind === 'error' ? <AlertCircle className="mt-0.5 size-5 shrink-0 text-danger" /> : <Info className="mt-0.5 size-5 shrink-0 text-primary" />}

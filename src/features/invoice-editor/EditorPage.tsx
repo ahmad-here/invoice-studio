@@ -1,4 +1,7 @@
 import { useSeo } from '@/hooks/useSeo'
+import { APP_MODE } from '@/lib/appMode'
+import { useAppBarActions } from '@/app/appBar'
+import { AppBarIcon } from '@/components/layout/AppBarIcon'
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Download, Eye, FilePlus2, Pencil, Printer, Save, RotateCcw } from 'lucide-react'
@@ -108,6 +111,12 @@ export default function EditorPage() {
 
   // Autosave work-in-progress (debounced, per invoice) so a refresh, crash or navigation never loses data.
   const timer = useRef<number | undefined>(undefined)
+  const appActions = useRef<{ print: () => void; pdf: () => void; fresh: () => void }>({ print: () => undefined, pdf: () => undefined, fresh: () => undefined })
+  useAppBarActions(APP_MODE ? <>
+    <AppBarIcon label="New invoice" onClick={() => appActions.current.fresh()}><FilePlus2 className="size-[22px]" /></AppBarIcon>
+    <AppBarIcon label="Print" onClick={() => appActions.current.print()}><Printer className="size-[22px]" /></AppBarIcon>
+    <AppBarIcon label="Download PDF" busy={!!busy} onClick={() => appActions.current.pdf()}><Download className="size-[22px]" /></AppBarIcon>
+  </> : null, APP_MODE && inv ? (isSaved ? inv.number || 'Edit invoice' : 'New invoice') : null, [busy, isSaved, inv?.number])
   const formTop = useRef<HTMLDivElement>(null)
   const pending = useRef<(() => void) | null>(null)
   const warned = useRef(false)
@@ -201,6 +210,7 @@ export default function EditorPage() {
   }
 
   const tplName = TEMPLATES.find((t) => t.id === inv.template)?.name
+  appActions.current = { print: () => print(inv), pdf: () => downloadPdf(inv), fresh: () => (dirty ? setConfirmNew(true) : startNew()) }
   const onTabKey = (e: React.KeyboardEvent) => {
     const i = TABS.findIndex((t) => t.id === tab)
     const next = e.key === 'ArrowRight' ? (i + 1) % TABS.length : e.key === 'ArrowLeft' ? (i - 1 + TABS.length) % TABS.length : e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : -1
@@ -212,8 +222,8 @@ export default function EditorPage() {
 
   return (
     <div className="pb-16 lg:pb-0">
-      {/* Toolbar */}
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      {/* Toolbar (web); in app mode these actions live in the app bar */}
+      <div className="app-hide mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h1 className="truncate text-xl font-semibold tracking-tight">{isSaved ? `Edit ${inv.number || 'invoice'}` : 'New invoice'}</h1>
@@ -311,8 +321,8 @@ export default function EditorPage() {
       </div>
 
       {/* Mobile sticky action bar: total + primary save always reachable */}
-      <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t border-line bg-white px-4 py-2 shadow-[0_-4px_12px_rgb(16_24_40/0.06)] lg:hidden">
-        <div className="min-w-0 flex-1"><div className="text-[11px] text-muted">Total</div><div className="truncate text-[15px] font-semibold tabular">{formatMoney(totals.grandTotal, inv.currency)}</div></div>
+      <div className="editor-actionbar fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t border-line bg-white px-4 py-2 shadow-[0_-4px_12px_rgb(16_24_40/0.06)] lg:hidden">
+        <div className="min-w-0 flex-1"><div className="text-[11px] text-muted">Total{dirty && <span className="text-warning"> · Unsaved</span>}</div><div className="truncate text-[15px] font-semibold tabular">{formatMoney(totals.grandTotal, inv.currency)}</div></div>
         <Button variant="ghost" size="sm" onClick={() => save(true)} loading={saving}>Draft</Button>
         <Button variant="primary" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving}>Save invoice</Button>
       </div>

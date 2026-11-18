@@ -12,6 +12,7 @@ import { calculateTotals } from '@/lib/calc'
 import { formatMoney } from '@/lib/money'
 import { todayISO } from '@/lib/dates'
 import { TEMPLATES } from '@/templates/registry'
+import { APP_MODE } from '@/lib/appMode'
 
 interface Parsed { name: string; text: string; result: BulkImportResult; headers: string[]; mapping: Record<string, string | null> }
 const PAGE = 50
@@ -174,8 +175,8 @@ export default function BulkPage() {
       <PageHeader title="Bulk generate" description="Create hundreds of invoices from one CSV or JSON file. Files are processed on this device — nothing is uploaded." actions={parsed && <Button icon={<RefreshCw className="size-4" />} onClick={reset}>Start over</Button>} />
 
       {/* Step indicator */}
-      <ol className="mb-6 flex flex-wrap gap-2 text-[13px]" aria-label="Progress">
-        {['Upload', 'Review & fix', 'Generate & download'].map((s, i) => {
+      <ol className="mb-6 flex flex-wrap gap-2 text-[13px] [.app-mode_&]:flex-nowrap [.app-mode_&]:gap-1.5 [.app-mode_&]:text-[12px] [.app-mode_&]:[&>li]:px-2.5" aria-label="Progress">
+        {(APP_MODE ? ['Upload', 'Review', 'Download'] : ['Upload', 'Review & fix', 'Generate & download']).map((s, i) => {
           const step = !parsed ? 0 : (result && (result.issues.length || result.failed.length || !result.invoices.length)) ? 1 : 2
           return (
             <li key={s} className={cx('flex items-center gap-2 rounded-full border px-3 py-1', i === step ? 'border-primary bg-primary text-white font-medium' : i < step ? 'border-primary-100 bg-white text-primary-700' : 'border-line text-muted')} aria-current={i === step ? 'step' : undefined}>
@@ -194,7 +195,7 @@ export default function BulkPage() {
               onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]) }}
               className={cx('flex flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white px-6 py-14 text-center transition-colors', dragOver ? 'border-primary bg-primary-50' : 'border-line-strong')}>
               <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary-50 text-primary"><UploadCloud className="size-7" /></div>
-              <p className="text-base font-semibold text-ink">{loading ? 'Reading file…' : 'Drop your CSV or JSON file here'}</p>
+              <p className="text-base font-semibold text-ink">{loading ? 'Reading file…' : APP_MODE ? 'Choose a CSV or JSON file' : 'Drop your CSV or JSON file here'}</p>
               <p className="mt-1 text-sm text-muted">Up to 20 MB · rows with the same invoice number become one invoice</p>
               <input ref={fileRef} type="file" accept=".csv,.json,text/csv,application/json" className="sr-only" aria-label="Choose CSV or JSON file" onChange={(e) => handleFile(e.target.files?.[0])} />
               <Button variant="primary" className="mt-5" loading={loading} onClick={() => fileRef.current?.click()}>Browse files</Button>

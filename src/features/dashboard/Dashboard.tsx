@@ -10,8 +10,14 @@ import { TemplateThumb } from '@/components/invoice/TemplateThumb'
 import { sampleInvoice } from '@/lib/sample'
 import { InvoiceListItem } from '@/components/invoice/InvoiceListItem'
 import { todayISO } from '@/lib/dates'
+import { APP_MODE } from '@/lib/appMode'
+import { AppHome } from './AppHome'
 
-export default function Dashboard() {
+export default function DashboardRoute() {
+  return APP_MODE ? <AppHome /> : <Dashboard />
+}
+
+function Dashboard() {
   useSeo({ title: 'Free Invoice Generator – Create, Print & Bulk Generate PDF Invoices | Invoice Studio', description: 'Free online invoice generator. Create professional PDF invoices with 10 templates, print instantly, or bulk generate hundreds from CSV or JSON. No sign-up, works offline.', path: '/' })
   const { invoices } = useApp()
   const nav = useNavigate()

@@ -59,6 +59,22 @@
 
 .scrollbar-thin { scrollbar-width: thin; }
 
+/* ------------------------------ App mode (Android app / installed PWA) ------------------------------ */
+html.app-mode { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+html.app-mode body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+html.app-mode :is(input, textarea, select, [contenteditable], .invoice-page, .selectable) { -webkit-user-select: text; user-select: text; }
+html.app-mode .app-hide, html.app-mode .page-title { display: none !important; }
+html.app-mode .page-header { margin-bottom: 0.75rem; gap: 0; }
+html.app-mode .page-header:not(:has(> div:last-child > :not(.app-hide))) { display: none; }
+html.app-mode .editor-actionbar { bottom: 0; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); }
+html.app-mode .toaster { bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+html.app-mode a, html.app-mode button { touch-action: manipulation; }
+@keyframes app-push { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes app-pop { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+.app-push { animation: app-push 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.app-pop { animation: app-pop 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) { .app-push, .app-pop { animation: none; } }
+
 /* Editor section transitions: Next slides in from the right, Back from the left */
 @keyframes tab-in-right { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: none; } }
 @keyframes tab-in-left { from { opacity: 0; transform: translateX(-32px); } to { opacity: 1; transform: none; } }

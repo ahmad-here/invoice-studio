@@ -6,6 +6,7 @@ import type { Invoice, InvoiceStatus } from '@/types/invoice'
 import { useApp, toast } from '@/app/store'
 import { Button, Card, ConfirmDialog, EmptyState, Input, PageHeader, Select } from '@/components/common/ui'
 import { InvoiceListItem } from '@/components/invoice/InvoiceListItem'
+import { APP_MODE } from '@/lib/appMode'
 import { useInvoiceActions, duplicateInvoice } from '@/hooks/useInvoiceActions'
 import { isOverdue } from '@/lib/dates'
 import { calculateTotals } from '@/lib/calc'
@@ -63,7 +64,23 @@ export default function SavedPage() {
 
   return (
     <div>
-      <PageHeader title="Saved invoices" description="Stored privately in this browser on this device. Use Settings → Backup to move them to another device." actions={<Button variant="primary" onClick={() => nav('/create')}>Create invoice</Button>} />
+      <PageHeader title="Saved invoices" description="Stored privately in this browser on this device. Use Settings → Backup to move them to another device." actions={<Button variant="primary" className="app-hide" onClick={() => nav('/create')}>Create invoice</Button>} />
+      {APP_MODE ? (
+        <div className="mb-4 space-y-3">
+          <div className="flex gap-2">
+            <Input label="Search invoices" srOnlyLabel className="flex-1" placeholder="Search invoices" value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE) }} prefix={<Search className="size-4" />} type="search" />
+            <Select label="Sort" srOnlyLabel className="w-36" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+              <option value="updated-desc">Recent</option><option value="issue-desc">Newest</option><option value="issue-asc">Oldest</option><option value="due-asc">Due soon</option><option value="amount-desc">Amount</option>
+            </Select>
+          </div>
+          <div role="radiogroup" aria-label="Filter by status" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-thin">
+            {([['all', 'All'], ['sent', 'Unpaid'], ['overdue', 'Overdue'], ['paid', 'Paid'], ['draft', 'Drafts'], ['cancelled', 'Cancelled']] as const).map(([v, l]) => (
+              <button key={v} type="button" role="radio" aria-checked={status === v} onClick={() => setStatus(v)}
+                className={`h-9 shrink-0 rounded-full border px-4 text-[13px] font-medium transition-colors ${status === v ? 'border-primary bg-primary text-white' : 'border-line-strong bg-white text-ink active:bg-canvas'}`}>{l}</button>
+            ))}
+          </div>
+        </div>
+      ) : (
       <Card className="mb-4 p-3">
         <div className="grid gap-3 sm:grid-cols-[1fr_180px_200px]">
           <Input label="Search invoices" srOnlyLabel placeholder="Search by number, customer, email…" value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE) }} prefix={<Search className="size-4" />} type="search" />
@@ -75,6 +92,7 @@ export default function SavedPage() {
           </Select>
         </div>
       </Card>
+      )}
       <Card>
         {invoices.length === 0 ? (
           <EmptyState icon={<FileText className="size-7" />} title="No saved invoices" description="Invoices you save appear here so you can edit, duplicate, print or download them later." action={<Button variant="primary" onClick={() => nav('/create')}>Create invoice</Button>} />

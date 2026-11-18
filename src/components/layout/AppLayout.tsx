@@ -6,6 +6,8 @@ import { Logo } from './Logo'
 import { InstallButton } from './InstallButton'
 import { Tour } from './Tour'
 import { isNative } from '@/services/files'
+import { APP_MODE } from '@/lib/appMode'
+import { AppShell } from './AppShell'
 
 const NAV = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: LayoutDashboard, end: true, tour: 'nav-home' },
@@ -23,6 +25,10 @@ const FOOTER = [
 ]
 
 export function AppLayout() {
+  return APP_MODE ? <AppShell /> : <WebLayout />
+}
+
+function WebLayout() {
   const loc = useLocation()
   useEffect(() => { window.scrollTo(0, 0) }, [loc.pathname])
   const wide = loc.pathname.startsWith('/create') || loc.pathname.startsWith('/edit')

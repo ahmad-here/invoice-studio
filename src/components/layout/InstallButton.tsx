@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Download } from 'lucide-react'
 import { Button } from '@/components/common/ui'
 import { isNative } from '@/services/files'
+import { APP_MODE } from '@/lib/appMode'
 
 interface BIPEvent extends Event { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }
 
@@ -9,7 +10,7 @@ interface BIPEvent extends Event { prompt: () => Promise<void>; userChoice: Prom
 export function InstallButton() {
   const [evt, setEvt] = useState<BIPEvent | null>(null)
   useEffect(() => {
-    if (isNative()) return
+    if (isNative() || APP_MODE) return
     const on = (e: Event) => { e.preventDefault(); setEvt(e as BIPEvent) }
     const done = () => setEvt(null)
     window.addEventListener('beforeinstallprompt', on)

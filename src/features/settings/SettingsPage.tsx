@@ -13,6 +13,10 @@ import { formatInvoiceNumber } from '@/lib/defaults'
 import { TEMPLATES } from '@/templates/registry'
 import { storage } from '@/services/storage/db'
 import { saveText } from '@/services/files'
+import { APP_MODE } from '@/lib/appMode'
+import { Link } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
+import { startTour } from '@/components/layout/Tour'
 
 const LOCALES = [['en-US', 'English (US) — 1,234.56'], ['en-GB', 'English (UK) — 1,234.56'], ['de-DE', 'German — 1.234,56'], ['fr-FR', 'French — 1 234,56'], ['en-IN', 'English (India) — 1,23,456.78'], ['ar-AE', 'Arabic (UAE)'], ['ur-PK', 'Urdu (Pakistan)']] as const
 
@@ -124,6 +128,20 @@ export default function SettingsPage() {
           <span className="text-sm text-ink">Unsaved changes to defaults</span>
           <span className="flex gap-2"><Button size="sm" onClick={() => setP(app.prefs)}>Discard</Button><Button size="sm" variant="primary" onClick={save} loading={saving}>Save defaults</Button></span>
         </Card>
+      )}
+      {APP_MODE && (
+        <section className="mt-6">
+          <h2 className="mb-2 px-1 text-[13px] font-semibold uppercase tracking-wide text-muted">Help & about</h2>
+          <Card>
+            <ul className="divide-y divide-line">
+              {([['How to use', '/how-to-use'], ['FAQ', '/faq'], ['Help & support', '/support'], ['Contact us', '/contact'], ['Privacy policy', '/privacy']] as const).map(([l, to]) => (
+                <li key={to}><Link to={to} className="flex min-h-12 items-center justify-between px-4 text-[15px] text-ink active:bg-canvas">{l}<ChevronRight className="size-5 text-muted" /></Link></li>
+              ))}
+              <li><button type="button" onClick={() => startTour()} className="flex min-h-12 w-full items-center justify-between px-4 text-left text-[15px] text-ink active:bg-canvas">Replay product tour<ChevronRight className="size-5 text-muted" /></button></li>
+            </ul>
+          </Card>
+          <p className="mt-4 text-center text-xs text-muted">Invoice Studio {__APP_VERSION__} · Data stays on this device</p>
+        </section>
       )}
       <ConfirmDialog open={confirmClear} title="Delete all data?" confirmLabel="Delete everything"
         message="This permanently deletes every invoice, your business profile and settings from this device. Export a backup first if you might need them."
