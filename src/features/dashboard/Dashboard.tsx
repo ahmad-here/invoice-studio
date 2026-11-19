@@ -19,8 +19,8 @@ export default function DashboardRoute() {
 }
 
 function Dashboard() {
-  useSeo({ title: 'Free Invoice Generator – Create PDF Invoices Online | Invoice Studio', description: 'Free online invoice generator: make professional PDF invoices in minutes with 11 templates, GST/VAT tax, multi-currency and bulk CSV import. No sign-up, no watermark, works offline.', path: '/' })
-  const { invoices } = useApp()
+  useSeo({ title: 'Free Invoice Generator – Create PDF Invoices Online | Invoice Studio', description: 'Free online invoice generator: make professional PDF invoices in minutes with 21 templates, GST/VAT tax, multi-currency and bulk CSV import. No sign-up, no watermark, works offline.', path: '/' })
+  const { invoices, businesses } = useApp()
   const nav = useNavigate()
   const stats = useMemo(() => {
     const month = todayISO().slice(0, 7)
@@ -40,7 +40,7 @@ function Dashboard() {
         <div className="max-w-2xl">
           <p className="text-[13px] font-semibold text-primary">100% free · No sign-up · Works offline</p>
           <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">Free invoice generator for professional PDF invoices</h1>
-          <p className="mt-3 text-base leading-relaxed text-muted">Create, print and download PDF invoices with 11 templates, or generate hundreds at once from a CSV or JSON file. Everything stays on this device.</p>
+          <p className="mt-3 text-base leading-relaxed text-muted">Create, print and download PDF invoices with 21 templates, or generate hundreds at once from a CSV or JSON file. Everything stays on this device.</p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Button size="lg" variant="primary" icon={<FilePlus2 className="size-5" />} onClick={() => nav('/create')}>Create invoice</Button>
             <Button size="lg" icon={<Layers className="size-5" />} onClick={() => nav('/bulk')}>Bulk generate</Button>
@@ -58,6 +58,12 @@ function Dashboard() {
         </div>
       </section>
 
+      {businesses.length === 0 && (
+        <section className="flex flex-col items-start gap-3 rounded-2xl border border-primary-100 bg-primary-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div><h2 className="text-[15px] font-semibold text-ink">Set up your business once</h2><p className="text-sm text-muted">Add your name, logo, tax and bank details — every invoice is filled in automatically.</p></div>
+          <Button variant="primary" onClick={() => nav('/business')}>Add my business</Button>
+        </section>
+      )}
       {invoices.length > 0 && <section aria-label="Statistics" className="grid grid-cols-3 gap-3 sm:gap-4">
         {[{ k: 'Invoices created', v: stats.total }, { k: 'This month', v: stats.month }, { k: 'Drafts', v: stats.drafts }].map((s) => (
           <Card key={s.k} className="px-4 py-4 sm:px-5">
@@ -93,7 +99,7 @@ function Dashboard() {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Templates</h2>
-          <Link to="/templates" className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-700">All 11 templates <ArrowRight className="size-4" /></Link>
+          <Link to="/templates" className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-700">All 21 templates <ArrowRight className="size-4" /></Link>
         </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {gallery.map(({ t, inv }) => (

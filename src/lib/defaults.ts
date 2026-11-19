@@ -1,6 +1,7 @@
 import { SCHEMA_VERSION, type BusinessProfile, type Customer, type Invoice, type InvoiceItem, type UserPreferences } from '@/types/invoice'
 import { addDays, todayISO } from './dates'
 import { uid } from './sanitize'
+import { paymentFor } from './payment'
 
 export const emptyBusiness = (): BusinessProfile => ({
   name: '', address: '', email: '', phone: '', website: '', taxNumber: '', vatNumber: '', extra: '',
@@ -63,7 +64,7 @@ export function createInvoice(prefs: UserPreferences, business: BusinessProfile,
     adjustment: 0,
     adjustmentLabel: 'Adjustment',
     amountPaid: 0,
-    payment: { ...prefs.payment, instructions: prefs.defaultPaymentInstructions, visible: !!(prefs.payment.bankName || prefs.payment.accountNumber || prefs.payment.iban || prefs.defaultPaymentInstructions) },
+    payment: paymentFor(business, prefs),
     customFields: [],
     customSections: [],
     notes: { text: prefs.defaultNotes, visible: !!prefs.defaultNotes },

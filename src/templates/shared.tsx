@@ -245,11 +245,11 @@ export function CustomSectionBlock({ ctx, section, titleClass, className, labelC
 export const visibleSections = (ctx: RenderCtx) => ctx.inv.customSections.filter((s) => s.visible && s.title && visibleFields(s.fields).length)
 
 /** Standard tail blocks shared by templates: custom sections, notes/terms, thank-you. */
-export function tailBlocks(ctx: RenderCtx, s: { titleClass: string; labelClass?: string; blockClass?: string; thanksClass?: string; payment?: boolean }): ReactNode[] {
+export function tailBlocks(ctx: RenderCtx, s: { titleClass: string; labelClass?: string; blockClass?: string; thanksClass?: string; payment?: boolean; skip?: string[] }): ReactNode[] {
   const out: ReactNode[] = []
   if (s.payment !== false && hasPayment(ctx)) out.push(<PaymentBlock key="pay" ctx={ctx} titleClass={s.titleClass} labelClass={s.labelClass} className={s.blockClass} />)
   for (const sec of visibleSections(ctx)) out.push(<CustomSectionBlock key={sec.id} ctx={ctx} section={sec} titleClass={s.titleClass} labelClass={s.labelClass} className={s.blockClass} />)
-  for (const [title, sec] of textSections(ctx)) out.push(<TextBlock key={title} title={title} text={sec.text} titleClass={s.titleClass} className={s.blockClass} />)
+  for (const [title, sec] of textSections(ctx)) if (!s.skip?.includes(title)) out.push(<TextBlock key={title} title={title} text={sec.text} titleClass={s.titleClass} className={s.blockClass} />)
   if (ctx.inv.thankYou.visible && ctx.inv.thankYou.text.trim()) out.push(<div key="ty" className={s.thanksClass}>{ctx.inv.thankYou.text}</div>)
   return out
 }
@@ -265,3 +265,43 @@ export function FooterText({ ctx, page, pageCount, className }: { ctx: RenderCtx
 }
 
 export const fmtDate = (iso: string, ctx: Pick<RenderCtx, 'prefs'>) => formatDate(iso, ctx.prefs.dateFormat, ctx.prefs.locale)
+
+/* ------------------------------ industry / document helpers ------------------------------ */
+
+/** Document title: the template's own type (e.g. "Proforma Invoice") unless the user set a custom title. */
+export const docTitle = (ctx: RenderCtx, fallback: string) => (ctx.inv.title && ctx.inv.title.trim() !== 'Invoice' ? ctx.inv.title : fallback)
+
+/** First visible custom field whose label matches. */
+export function findField(ctx: RenderCtx, re: RegExp): string {
+  const f = visibleFields(ctx.inv.customFields).find((x) => re.test(x.label))
+  return f ? fieldValue(f, ctx) : ''
+}
+/** Visible custom fields NOT matched by any of the patterns (rendered in the generic details list). */
+export function otherFieldRows(ctx: RenderCtx, used: RegExp[]): [string, string][] {
+  return visibleFields(ctx.inv.customFields).filter((f) => !used.some((re) => re.test(f.label))).map((f) => [f.label, fieldValue(f, ctx)])
+}
+/** Standard meta rows without custom fields (dates, PO, reference). */
+export const baseMetaRows = (ctx: RenderCtx, number = false) => metaRows(ctx, { number, custom: false })
+
+export const totalQty = (ctx: RenderCtx) => ctx.inv.items.reduce((a, i) => a + (Number.isFinite(i.quantity) ? i.quantity : 0), 0)
+
+/** Small caps label used by several industry templates. */
+export const Cap = ({ children, className }: { children: ReactNode; className?: string }) => (
+  <div className={cx('text-[9.5px] font-semibold uppercase tracking-[0.08em] text-[#6b7280]', className)}>{children}</div>
+)
+
+/** "Label: value" detail grid. */
+export function DetailGrid({ rows, cols = 2, className }: { rows: [string, string][]; cols?: 2 | 3 | 4; className?: string }) {
+  if (!rows.length) return null
+  const grid = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' }[cols]
+  return (
+    <div className={cx('grid gap-x-5 gap-y-2', grid, className)}>
+      {rows.map(([k, v], i) => <div key={i} className="min-w-0"><Cap>{k}</Cap><div className="font-medium [overflow-wrap:anywhere] whitespace-pre-line">{v || '—'}</div></div>)}
+    </div>
+  )
+}
+
+/** Signature line for declarations and receipts. */
+export const SignatureLine = ({ label }: { label: string }) => (
+  <div className="w-[220px]"><div className="h-10 border-b border-[#9ca3af]" /><div className="mt-1 text-[10px] text-[#6b7280]">{label}</div></div>
+)

@@ -17,6 +17,7 @@
   ],
   "disallow": [
     "/404",
+    "/business",
     "/clients",
     "/edit/",
     "/invoices",

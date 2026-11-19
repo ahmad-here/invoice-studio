@@ -3,7 +3,7 @@ import { ContentLayout, H2, P, UL } from './ContentLayout'
 import { useSeo } from '@/hooks/useSeo'
 
 const FEATURES = [
-  { icon: LayoutTemplate, title: '11 professional invoice templates', text: 'Classic Professional, Modern Minimal, Corporate Blue, Executive, Creative Studio, Elegant Dark Accent, Compact, Service, Retail, Highlight and Modern Business — each with its own layout, not just a colour swap. Switch at any time without losing data.' },
+  { icon: LayoutTemplate, title: '21 professional invoice templates', text: 'Classic Professional, Modern Minimal, Corporate Blue, Executive, Creative Studio, Elegant Dark Accent, Compact, Service, Retail, Highlight and Modern Business — plus Construction, Timesheet, Medical, Hotel, Home Services, Proforma, Tax Invoice (GST/VAT), Commercial (export), Credit Note and Receipt — each with its own layout, not just a colour swap. Switch at any time without losing data.' },
   { icon: FileSpreadsheet, title: 'Bulk invoice generator (CSV & JSON)', text: 'Upload one file and generate hundreds of invoices. Rows sharing an invoice number become one multi-line invoice. Row-level validation, column mapping, a downloadable error report, and valid invoices still generate when others fail.' },
   { icon: FileDown, title: 'PDF download, ZIP and combined PDF', text: 'Download any invoice as an A4, Letter or Legal PDF with correct page breaks and repeated table headers. Download bulk invoices individually, as one ZIP, or as a single combined PDF with your own filename pattern.' },
   { icon: Printer, title: 'Print-ready output', text: 'Print sends only the invoice to your printer — no menus or buttons — with the right page size and no blank pages.' },

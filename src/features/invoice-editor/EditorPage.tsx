@@ -1,5 +1,6 @@
 import { useSeo } from '@/hooks/useSeo'
 import { completion } from '@/lib/completion'
+import { hasPaymentDetails, toBusinessPayment } from '@/lib/payment'
 import { ToolGuide } from '@/features/content/SeoSections'
 import { CircleCheck, FileDown, FolderOpen, Maximize2, Send } from 'lucide-react'
 import { clientToCustomer, customerToClient } from '@/lib/clients'
@@ -310,7 +311,18 @@ export default function EditorPage() {
               <ItemsSection inv={inv} update={update} totals={totals} defaultTax={prefs.defaultTaxRate} />
               <TotalsSection inv={inv} update={update} totals={totals} />
             </>}
-            {tab === 'payment' && <PaymentSection inv={inv} update={update} />}
+            {tab === 'payment' && (() => {
+              const prof = businesses.find((b) => b.id === inv.businessId)
+              const saved = prof && hasPaymentDetails(prof.payment) ? { ...prof.payment!, visible: true } : null
+              return <PaymentSection inv={inv} update={update} saved={saved && JSON.stringify(toBusinessPayment(inv.payment)) !== JSON.stringify(prof!.payment) ? saved : null}
+                onSaveDefault={async () => {
+                  const target = prof ?? (inv.business.name.trim() ? { ...inv.business, id: undefined } : null)
+                  if (!target) { toast.error('Add your business name first (From & To tab).'); return }
+                  const s = await saveBusiness({ ...target, payment: toBusinessPayment(inv.payment) })
+                  if (!prof) update({ businessId: s.id })
+                  toast.success(`Payment details saved for ${s.name}. New invoices will be filled in automatically.`)
+                }} />
+            })()}
             {tab === 'extras' && <>
               <CustomFieldsSection inv={inv} update={update} />
               <CustomSectionsSection inv={inv} update={update} />

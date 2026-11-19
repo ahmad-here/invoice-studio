@@ -160,14 +160,14 @@ test.describe('invoice studio', () => {
   })
 
   test('every template renders and exports to PDF', async ({ page }) => {
-    test.setTimeout(240_000)
+    test.setTimeout(480_000)
     await page.goto('/create')
     await fillBasicInvoice(page)
     await page.getByRole('tab', { name: 'Design' }).click()
-    const names = ['Classic Professional', 'Modern Minimal', 'Corporate Blue', 'Executive', 'Creative Studio', 'Elegant Dark Accent', 'Compact Invoice', 'Service Invoice', 'Retail Invoice', 'Highlight', 'Modern Business']
+    const names = ['Classic Professional', 'Modern Minimal', 'Corporate Blue', 'Executive', 'Creative Studio', 'Elegant Dark Accent', 'Compact Invoice', 'Service Invoice', 'Retail Invoice', 'Highlight', 'Modern Business', 'Construction / Contractor', 'Hourly Timesheet', 'Proforma Invoice', 'Tax Invoice (GST/VAT)', 'Commercial Invoice (Export)', 'Credit Note', 'Payment Receipt', 'Medical / Healthcare', 'Hotel Guest Folio', 'Home Services / Cleaning']
     for (const name of names) {
       await page.getByRole('button', { name, exact: false }).filter({ hasText: name }).first().click()
-      await expect(page.getByText(new RegExp(`· ${name} ·`))).toBeVisible()
+      await expect(page.getByText(`· ${name} ·`, { exact: false })).toBeVisible()
       const pv = page.getByLabel('Invoice preview')
       await expect(pv).toContainText('Acme Corporation')
       await expect(pv).toContainText('$2,501.00')
@@ -208,10 +208,11 @@ test.describe('invoice studio', () => {
   })
 
   test('backup export/import round trip and settings defaults', async ({ page }) => {
-    await page.goto('/settings')
+    await page.goto('/business')
     await page.getByLabel('Business name').fill('Default Biz Co')
     await page.getByRole('button', { name: 'Add business' }).last().click()
     await expect(page.getByText('“Default Biz Co” saved.')).toBeVisible()
+    await page.goto('/settings')
     await page.getByLabel('Number prefix').fill('ACME-')
     await page.getByRole('button', { name: 'Save defaults' }).click()
     await expect(page.getByText(/Settings saved/)).toBeVisible()

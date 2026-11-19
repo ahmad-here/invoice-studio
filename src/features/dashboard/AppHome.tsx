@@ -11,7 +11,7 @@ import { haptic } from '@/services/native'
 
 /** Native-app home screen: greeting, outstanding balance, quick actions, recent activity. */
 export function AppHome() {
-  const { invoices, business, prefs } = useApp()
+  const { invoices, business, businesses, prefs } = useApp()
   const nav = useNavigate()
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
@@ -46,6 +46,13 @@ export function AppHome() {
         <h2 className="truncate text-2xl font-semibold tracking-tight text-ink">{business.name || 'Welcome'}</h2>
       </section>
 
+      {businesses.length === 0 && (
+        <Link to="/business" className="flex items-center gap-3 rounded-2xl border border-primary-100 bg-primary-50 p-4 active:opacity-80">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-white"><Users className="size-5" aria-hidden /></span>
+          <span className="min-w-0 flex-1"><span className="block text-[15px] font-semibold text-ink">Add your business</span><span className="block text-xs text-muted">Once — then every invoice fills itself in</span></span>
+          <ChevronRight className="size-5 text-primary" aria-hidden />
+        </Link>
+      )}
       <Card className="overflow-hidden">
         <div className="bg-primary px-5 py-5 text-white">
           <div className="text-[13px] text-white/90">Outstanding</div>

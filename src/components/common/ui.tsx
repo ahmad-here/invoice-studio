@@ -151,11 +151,14 @@ export function Badge({ tone = 'neutral', children }: { tone?: 'neutral' | 'blue
 /* --------------------------------- Modal --------------------------------- */
 export function Modal({ open, onClose, title, children, footer, size = 'md' }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; footer?: ReactNode; size?: 'sm' | 'md' | 'lg' | 'xl' }) {
   const ref = useRef<HTMLDivElement>(null)
+  // Keep the latest onClose without re-running the open effect (which would steal focus on every keystroke)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
   useEffect(() => {
     if (!open) return
     const prev = document.activeElement as HTMLElement | null
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') closeRef.current()
       if (e.key === 'Tab' && ref.current) {
         const f = ref.current.querySelectorAll<HTMLElement>('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')
         if (!f.length) return
@@ -169,7 +172,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: {
     document.body.style.overflow = 'hidden'
     setTimeout(() => ref.current?.querySelector<HTMLElement>('[data-autofocus],input,select,textarea,button:not([aria-label="Close"])')?.focus(), 0)
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = o; prev?.focus?.() }
-  }, [open, onClose])
+  }, [open])
   if (!open) return null
   const w = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-3xl', xl: 'max-w-6xl' }[size]
   return createPortal(

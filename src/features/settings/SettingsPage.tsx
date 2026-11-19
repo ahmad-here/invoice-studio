@@ -6,7 +6,7 @@ import { useApp, toast } from '@/app/store'
 import { Button, Card, ConfirmDialog, Input, PageHeader, Select, Textarea, Badge } from '@/components/common/ui'
 import { NumberInput } from '@/components/forms/inputs'
 import { Section } from '@/components/common/Section'
-import { BusinessProfiles } from './BusinessProfiles'
+import { Building2, ChevronRight as Chevron } from 'lucide-react'
 import { CURRENCIES, formatMoney } from '@/lib/money'
 import { formatDate, todayISO } from '@/lib/dates'
 import { formatInvoiceNumber } from '@/lib/defaults'
@@ -67,8 +67,12 @@ export default function SettingsPage() {
       <PageHeader title="Settings" description="Business profiles save individually. Invoice, tax and payment defaults save with the bar that appears when you change them." />
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
-          <BusinessProfiles />
-          <Section title="Default payment details">
+          <Link to="/business" className="flex items-center gap-3 rounded-2xl border border-line bg-white p-4 shadow-xs hover:bg-canvas">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-primary-50 text-primary"><Building2 className="size-5" aria-hidden /></span>
+            <span className="min-w-0 flex-1"><span className="block text-[15px] font-semibold text-ink">My business</span><span className="block text-sm text-muted">Business details, logo and bank details used on your invoices</span></span>
+            <Chevron className="size-5 text-muted" aria-hidden />
+          </Link>
+          <Section title="Fallback payment details" description="Used only when a business has no payment details of its own (set those in My business).">
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Payment method" value={p.payment.method} onChange={(e) => setPay('method', e.target.value)} />
               <Input label="Bank name" value={p.payment.bankName} onChange={(e) => setPay('bankName', e.target.value)} />

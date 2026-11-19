@@ -1,8 +1,8 @@
 import { memo, useCallback, useRef, useState } from 'react'
 import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, Plus, Trash2, GripVertical, X, Check } from 'lucide-react'
-import type { Client, BusinessProfile, CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals } from '@/types/invoice'
+import type { PaymentDetails, Client, BusinessProfile, CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals } from '@/types/invoice'
 import { Button, Input, Segmented, Select, Switch, Textarea, cx, Badge } from '@/components/common/ui'
-import { MoneyInput, NumberInput } from '@/components/forms/inputs'
+import { DiscountField, MoneyInput, NumberInput } from '@/components/forms/inputs'
 import { CURRENCIES, formatMoney, convertMinorPrecision, currencyDecimals } from '@/lib/money'
 import { newItem } from '@/lib/defaults'
 import { uid } from '@/lib/sanitize'
@@ -17,6 +17,7 @@ export { Section, LogoEditor }
 import { sampleInvoice } from '@/lib/sample'
 import { clientToCustomer } from '@/lib/clients'
 import { completion } from '@/lib/completion'
+import { hasPaymentDetails } from '@/lib/payment'
 
 export type Update = (patch: Partial<Invoice> | ((inv: Invoice) => Partial<Invoice>)) => void
 interface P { inv: Invoice; update: Update }
@@ -84,10 +85,16 @@ export const BusinessSection = memo(function BusinessSection({ inv, update, prof
         <Button size="sm" variant="ghost" onClick={() => onSaveProfile(true)}>Save as new profile</Button>
       </div>
     }>
+      {profiles.length === 0 && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary-100 bg-primary-50 px-3 py-2.5 text-[13px] text-primary-700">
+          <span>Tip: save your business once and it fills in automatically next time.</span>
+          {onSaveProfile && <Button size="sm" variant="primary" onClick={() => onSaveProfile(true)} disabled={!inv.business.name.trim()}>Save my business</Button>}
+        </div>
+      )}
       {profiles.length > 0 && (
         <Select label="Business profile" className="mb-4" data-tour="business-select" value={profiles.some((x) => x.id === inv.businessId) ? inv.businessId : ''} onChange={(e) => {
           const pick = profiles.find((x) => x.id === e.target.value)
-          if (pick) update({ business: structuredClone(pick), businessId: pick.id })
+          if (pick) update((i) => ({ business: structuredClone(pick), businessId: pick.id, payment: hasPaymentDetails(pick.payment) ? { ...pick.payment!, visible: true } : i.payment }))
           else update({ businessId: undefined })
         }}>
           <option value="">Custom (this invoice only)</option>
@@ -185,14 +192,7 @@ const ItemRow = memo(function ItemRow({ item, index, count, currency, taxMode, t
           <Textarea label="Description" rows={2} maxLength={2000} className="col-span-2 sm:col-span-4" value={item.description} onChange={(e) => set({ description: e.target.value })} />
           <Input label="SKU / code" value={item.sku} maxLength={60} onChange={(e) => set({ sku: e.target.value })} />
           <Input label="Unit" placeholder="hrs, pcs" value={item.unit} maxLength={20} onChange={(e) => set({ unit: e.target.value })} />
-          <div className="col-span-2 sm:col-span-1">
-            <div className="mb-1.5 flex items-center justify-between"><span className="text-[13px] font-medium">Discount</span>
-              <Segmented size="sm" label="Discount type" value={item.discount.type} onChange={(type) => set({ discount: { type, value: 0 } })} options={[{ value: 'percent', label: '%' }, { value: 'fixed', label: currency }]} />
-            </div>
-            {item.discount.type === 'percent'
-              ? <NumberInput label="Discount percent" srOnlyLabel suffix="%" value={item.discount.value} max={100} onChange={(value) => set({ discount: { type: 'percent', value } })} />
-              : <MoneyInput label="Discount amount" srOnlyLabel value={item.discount.value} currency={currency} onChange={(value) => set({ discount: { type: 'fixed', value } })} />}
-          </div>
+          <DiscountField label="Discount" className="col-span-2 sm:col-span-1" value={item.discount} currency={currency} onChange={(discount) => set({ discount })} />
           <NumberInput label="Tax %" suffix="%" value={item.taxRate} max={100} disabled={taxMode === 'invoice'} hint={taxMode === 'invoice' ? 'Invoice-level tax in use' : undefined} onChange={(taxRate) => set({ taxRate })} />
         </div>
       )}
@@ -253,21 +253,18 @@ export const TotalsSection = memo(function TotalsSection({ inv, update, totals }
   return (
     <Section title="Discounts, tax & totals">
       <div className="grid gap-4 sm:grid-cols-2">
+        <DiscountField label="Invoice discount" hint="Applied before tax" value={inv.invoiceDiscount} currency={inv.currency} onChange={(invoiceDiscount) => update({ invoiceDiscount })} />
         <div>
-          <div className="mb-1.5 flex items-center justify-between"><span className="text-[13px] font-medium">Invoice discount</span>
-            <Segmented size="sm" label="Invoice discount type" value={inv.invoiceDiscount.type} onChange={(type) => update({ invoiceDiscount: { type, value: 0 } })} options={[{ value: 'percent', label: '%' }, { value: 'fixed', label: inv.currency }]} />
+          <span className="mb-1.5 block text-[13px] font-medium text-ink">Tax</span>
+          <div className="flex gap-2">
+            <select aria-label="Tax mode" value={inv.taxMode} onChange={(e) => update({ taxMode: e.target.value as Invoice['taxMode'] })}
+              className="h-10 min-w-0 flex-1 cursor-pointer rounded-lg border border-line-strong bg-white px-3 text-sm text-ink shadow-xs focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15">
+              <option value="item">Per item</option>
+              <option value="invoice">Whole invoice</option>
+            </select>
+            {inv.taxMode === 'invoice' && <NumberInput label="Invoice tax rate" srOnlyLabel suffix="%" className="w-28 shrink-0" value={inv.invoiceTaxRate} max={100} onChange={(invoiceTaxRate) => update({ invoiceTaxRate })} />}
           </div>
-          {inv.invoiceDiscount.type === 'percent'
-            ? <NumberInput label="Invoice discount percent" srOnlyLabel suffix="%" value={inv.invoiceDiscount.value} max={100} hint="Applied before tax" onChange={(value) => update({ invoiceDiscount: { type: 'percent', value } })} />
-            : <MoneyInput label="Invoice discount amount" srOnlyLabel value={inv.invoiceDiscount.value} currency={inv.currency} hint="Applied before tax" onChange={(value) => update({ invoiceDiscount: { type: 'fixed', value } })} />}
-        </div>
-        <div>
-          <div className="mb-1.5 flex items-center justify-between"><span className="text-[13px] font-medium">Tax</span>
-            <Segmented size="sm" label="Tax mode" value={inv.taxMode} onChange={(taxMode) => update({ taxMode })} options={[{ value: 'item', label: 'Per item' }, { value: 'invoice', label: 'Whole invoice' }]} />
-          </div>
-          {inv.taxMode === 'invoice'
-            ? <NumberInput label="Invoice tax rate" srOnlyLabel suffix="%" value={inv.invoiceTaxRate} max={100} hint="Replaces per-item rates (never added twice)" onChange={(invoiceTaxRate) => update({ invoiceTaxRate })} />
-            : <p className="flex h-10 items-center rounded-lg bg-canvas px-3 text-[13px] text-muted">Set each item's tax rate in Line items.</p>}
+          <p className="mt-1 text-xs text-muted">{inv.taxMode === 'invoice' ? 'One rate for the whole invoice (replaces item rates).' : "Set each item's tax rate in Line items."}</p>
         </div>
         <MoneyInput label="Shipping / additional charges" value={inv.shipping} currency={inv.currency} onChange={(shipping) => update({ shipping })} />
         <div className="grid grid-cols-[1fr_1fr] gap-2">
@@ -294,11 +291,18 @@ const Row = ({ k, v, strong }: { k: string; v: string; strong?: boolean }) => (
 )
 
 /* ------------------------------ Payment ------------------------------ */
-export const PaymentSection = memo(function PaymentSection({ inv, update }: P) {
+export const PaymentSection = memo(function PaymentSection({ inv, update, saved, onSaveDefault }: P & { saved?: PaymentDetails | null; onSaveDefault?: () => void }) {
   const p = inv.payment
   const set = (k: keyof typeof p, v: string | boolean) => update((i) => ({ payment: { ...i.payment, [k]: v } }))
   return (
     <Section title="Payment information" complete={completion(inv).payment} aside={<Switch label="Show on invoice" checked={p.visible} onChange={(v) => set('visible', v)} />}>
+      {(saved || onSaveDefault) && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-canvas px-3 py-2.5">
+          <span className="mr-auto text-[13px] text-muted">{saved ? `Saved details for ${inv.business.name || 'this business'}` : 'Save these details so every new invoice is filled in automatically.'}</span>
+          {saved && <Button size="sm" onClick={() => update({ payment: { ...saved, visible: true } })}>Use saved details</Button>}
+          {onSaveDefault && hasPaymentDetails(p) && <Button size="sm" variant="ghost" onClick={onSaveDefault}>Save as default for this business</Button>}
+        </div>
+      )}
       <div className={cx('grid gap-4 sm:grid-cols-2', !p.visible && 'opacity-60')}>
         <Input label="Payment method" value={p.method} maxLength={60} placeholder="Bank transfer" onChange={(e) => set('method', e.target.value)} />
         <Input label="Bank name" value={p.bankName} maxLength={100} onChange={(e) => set('bankName', e.target.value)} />
@@ -427,10 +431,26 @@ const thumbFor = (id: Invoice['template']) => {
 }
 
 export const DesignSection = memo(function DesignSection({ inv, update }: P) {
+  const [cat, setCat] = useState<'All' | 'General' | 'Industry' | 'Document'>('All')
   return (
     <Section title="Template & layout" description="Switch templates at any time — your data stays the same.">
+      {(() => {
+        const meta = TEMPLATES.find((t) => t.id === inv.template)
+        const missing = (meta?.fields ?? []).filter((l) => !inv.customFields.some((f) => f.label.trim().toLowerCase() === l.toLowerCase()))
+        return missing.length ? (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary-100 bg-primary-50 px-4 py-3">
+            <p className="text-[13px] text-primary-700"><b>{meta?.name}</b> shows extra details: {missing.join(', ')}.</p>
+            <Button size="sm" variant="primary" icon={<Plus className="size-4" />} onClick={() => update((i) => ({ customFields: [...i.customFields, ...missing.map((l) => newField(l))] }))}>Add recommended fields</Button>
+          </div>
+        ) : null
+      })()}
+      <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin" role="radiogroup" aria-label="Template category">
+        {(['All', 'General', 'Industry', 'Document'] as const).map((c) => (
+          <button key={c} type="button" role="radio" aria-checked={cat === c} onClick={() => setCat(c)} className={`h-8 shrink-0 rounded-full border px-3 text-[12.5px] font-medium ${cat === c ? 'border-primary bg-primary text-white' : 'border-line-strong text-ink hover:bg-canvas'}`}>{c === 'Document' ? 'Document types' : c}</button>
+        ))}
+      </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {TEMPLATES.map((t) => {
+        {TEMPLATES.filter((t) => cat === 'All' || t.category === cat).map((t) => {
           const active = inv.template === t.id
           return (
             <button key={t.id} type="button" aria-pressed={active} onClick={() => update({ template: t.id, accentColor: undefined })}

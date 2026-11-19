@@ -1,5 +1,5 @@
 import { useSeo } from '@/hooks/useSeo'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Check } from 'lucide-react'
 import type { TemplateId } from '@/types/invoice'
@@ -12,11 +12,12 @@ import { sampleInvoice } from '@/lib/sample'
 import { ToolGuide } from '@/features/content/SeoSections'
 
 export default function TemplatesPage() {
-  useSeo({ title: '11 Free Invoice Templates – Download as PDF', description: 'Free professional invoice templates: classic, modern, minimal, corporate, service, retail and more. Customise with your logo and download as PDF — no sign-up.', path: '/templates' })
+  useSeo({ title: '21 Free Invoice Templates – Download as PDF', description: 'Free professional invoice templates: classic, modern, minimal, corporate, service, retail and more. Customise with your logo and download as PDF — no sign-up.', path: '/templates' })
   const { prefs, savePrefs } = useApp()
   const nav = useNavigate()
   const [params, setParams] = useSearchParams()
   const open = params.get('t') as TemplateId | null
+  const [cat, setCat] = useState<'All' | 'General' | 'Industry' | 'Document'>(() => (params.get('cat') as 'Industry') || 'All')
   const samples = useMemo(() => Object.fromEntries(TEMPLATES.map((t) => [t.id, sampleInvoice(t.id)])), [])
 
   const applyTemplate = (id: TemplateId) => {
@@ -28,9 +29,16 @@ export default function TemplatesPage() {
 
   return (
     <div>
-      <PageHeader title="Invoice templates" description="Eleven distinct, print-ready designs. Every template supports your logo, custom fields, multiple pages and all currencies." />
+      <PageHeader title="Invoice templates" description="Twenty-one distinct, print-ready designs. Every template supports your logo, custom fields, multiple pages and all currencies." />
+      <div className="mb-5 flex gap-2 overflow-x-auto pb-1 scrollbar-thin" role="radiogroup" aria-label="Template category">
+        {(['All', 'General', 'Industry', 'Document'] as const).map((c) => (
+          <button key={c} type="button" role="radio" aria-checked={cat === c} onClick={() => setCat(c)} className={`h-9 shrink-0 rounded-full border px-4 text-[13px] font-medium transition-colors ${cat === c ? 'border-primary bg-primary text-white' : 'border-line-strong bg-white text-ink hover:bg-canvas'}`}>
+            {c === 'All' ? `All (${TEMPLATES.length})` : c === 'Document' ? 'Document types' : c}
+          </button>
+        ))}
+      </div>
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {TEMPLATES.map((t) => (
+        {TEMPLATES.filter((t) => cat === 'All' || t.category === cat).map((t) => (
           <div key={t.id} className="flex flex-col overflow-hidden rounded-xl border border-line bg-white shadow-xs">
             <button type="button" onClick={() => setParams({ t: t.id })} className="group relative border-b border-line text-left" aria-label={`Preview ${t.name}`}>
               <span className="absolute inset-x-0 bottom-2 z-10 mx-auto w-fit rounded-full bg-ink/80 px-2.5 py-1 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">Preview</span>

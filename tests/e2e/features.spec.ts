@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test('multiple business profiles: add, set default, pick in editor', async ({ page }) => {
-  await page.goto('/settings')
+  await page.goto('/business')
   await page.getByLabel('Business name').fill('Alpha Consulting')
   await page.getByLabel('Email').first().fill('hello@alpha.test')
   await page.getByRole('button', { name: 'Add business' }).last().click()
@@ -24,7 +24,7 @@ test('multiple business profiles: add, set default, pick in editor', async ({ pa
   await expect(page.getByLabel('Invoice preview')).toContainText('hello@alpha.test')
 
   // delete with confirmation
-  await page.goto('/settings')
+  await page.goto('/business')
   await page.getByRole('button', { name: 'Delete Alpha Consulting' }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
   await expect(page.getByRole('list', { name: 'Business profiles' }).getByRole('listitem')).toHaveCount(1)
@@ -39,7 +39,7 @@ test('product tour can be replayed, navigated and skipped', async ({ page }) => 
   await dialog.getByRole('button', { name: 'Start tour' }).click()
   await expect(page.getByRole('dialog', { name: 'Create an invoice' })).toBeVisible()
   await page.keyboard.press('ArrowRight')
-  await expect(page.getByRole('dialog', { name: '11 professional templates' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: '21 professional templates' })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
   expect(await page.evaluate(() => localStorage.getItem('invoice-studio:tour-done'))).toBe('1')
@@ -148,4 +148,46 @@ test('404 page and terms page exist with proper SEO', async ({ page }) => {
   const ld = await page.locator('#route-jsonld').textContent()
   expect(ld).toContain('BreadcrumbList')
   expect(await page.locator('meta[property="og:image"]').getAttribute('content')).toMatch(/og-image\.png$/)
+})
+
+test('typing in a dialog keeps focus in the field being edited', async ({ page }) => {
+  await page.goto('/clients')
+  await page.getByRole('button', { name: 'Add your first client' }).click()
+  const d = page.getByRole('dialog')
+  await d.getByLabel('Contact name').fill('Ali Raza')
+  await d.getByLabel('Company').click()
+  await page.keyboard.type('Soft Co', { delay: 40 })
+  await expect(d.getByLabel('Company')).toBeFocused()
+  await expect(d.getByLabel('Company')).toHaveValue('Soft Co')
+  await expect(d.getByLabel('Contact name')).toHaveValue('Ali Raza')
+})
+
+test('business payment details are filled in automatically on new invoices', async ({ page }) => {
+  await page.goto('/business')
+  await page.getByLabel('Business name').fill('Pay Ready Ltd')
+  await page.getByLabel('Bank name').fill('Northwind Bank')
+  await page.getByLabel('Account number').fill('12345678')
+  await page.getByRole('button', { name: 'Add business' }).last().click()
+  await expect(page.getByText('“Pay Ready Ltd” saved.')).toBeVisible()
+  await page.goto('/create')
+  await page.getByRole('tab', { name: 'Payment' }).click()
+  await expect(page.getByLabel('Bank name')).toHaveValue('Northwind Bank')
+  await expect(page.getByLabel('Account number')).toHaveValue('12345678')
+  await expect(page.getByLabel('Invoice preview')).toContainText('Northwind Bank')
+  // details typed on an invoice can be saved back to the business
+  await page.getByLabel('IBAN').fill('GB00TEST123')
+  await page.getByRole('button', { name: 'Save as default for this business' }).click()
+  await expect(page.getByText(/Payment details saved for Pay Ready Ltd/)).toBeVisible()
+})
+
+test('templates page filters by category and editor offers recommended fields', async ({ page }) => {
+  await page.goto('/templates')
+  await page.getByRole('radio', { name: 'Industry' }).click()
+  await expect(page.getByRole('button', { name: 'Preview Hotel Guest Folio' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Preview Classic Professional' })).toHaveCount(0)
+  await page.goto('/create?template=hotel')
+  await page.getByRole('tab', { name: 'Design' }).click()
+  await page.getByRole('button', { name: 'Add recommended fields' }).click()
+  await page.getByRole('tab', { name: 'Extras' }).click()
+  await expect(page.getByLabel('Label').first()).toHaveValue('Check-in')
 })

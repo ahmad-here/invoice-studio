@@ -1,3 +1,4 @@
+import { amountInWords, integerToWords } from '@/lib/words'
 import { describe, expect, it } from 'vitest'
 import { allocate, calculateTotals, discountAmount, type CalcInput } from '@/lib/calc'
 import { formatMoney, minorToInput, toMinor, convertMinorPrecision, normalizeDecimal } from '@/lib/money'
@@ -120,5 +121,15 @@ describe('calculateTotals', () => {
     expect(t.tax).toBe(lineTax)
     expect(t.lines.reduce((a, l) => a + l.invoiceDiscountShare, 0)).toBe(t.invoiceDiscount)
     expect(Number.isInteger(t.grandTotal)).toBe(true)
+  })
+})
+
+describe('amount in words', () => {
+  it('spells integers and currency amounts', () => {
+    expect(integerToWords(0)).toBe('zero')
+    expect(integerToWords(1234)).toBe('one thousand two hundred and thirty-four')
+    expect(integerToWords(2000015)).toBe('two million fifteen')
+    expect(amountInWords(2661820, 'USD')).toBe('Twenty-six thousand six hundred and eighteen US dollars and twenty cents only')
+    expect(amountInWords(1500, 'JPY')).toBe('One thousand five hundred Japanese yen only')
   })
 })

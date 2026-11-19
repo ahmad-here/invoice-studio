@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { FilePlus2, FolderOpen, LayoutDashboard, LayoutTemplate, Layers, LifeBuoy, Search, Settings, ShieldCheck, Smartphone, Users } from 'lucide-react'
+import { Building2, FilePlus2, FolderOpen, LayoutDashboard, LayoutTemplate, Layers, LifeBuoy, Search, Settings, ShieldCheck, Smartphone, Users } from 'lucide-react'
 import { Suspense, useEffect, useState } from 'react'
 import { Spinner, Toaster, buttonClass, cx } from '@/components/common/ui'
 import { useApp } from '@/app/store'
@@ -15,8 +15,9 @@ const NAV = [
   { to: '/create', label: 'Create invoice', short: 'Create', icon: FilePlus2, tour: 'nav-create' },
   { to: '/invoices', label: 'Invoices', short: 'Saved', icon: FolderOpen, tour: 'nav-invoices' },
   { to: '/clients', label: 'Clients', short: 'Clients', icon: Users, tour: 'nav-clients' },
+  { to: '/business', label: 'My business', short: 'Business', icon: Building2, tour: 'nav-business' },
   { to: '/templates', label: 'Templates', short: 'Templates', icon: LayoutTemplate, tour: 'nav-templates', mobile: false },
-  { to: '/bulk', label: 'Bulk generate', short: 'Bulk', icon: Layers, tour: 'nav-bulk' },
+  { to: '/bulk', label: 'Bulk generate', short: 'Bulk', icon: Layers, tour: 'nav-bulk', mobile: false },
   { to: '/settings', label: 'Settings', short: 'Settings', icon: Settings, tour: 'nav-settings' },
 ]
 

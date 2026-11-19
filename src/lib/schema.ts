@@ -7,7 +7,7 @@ import { LOGO_DATA_URL, uid } from './sanitize'
 const str = (max = 5000) => z.string().max(max).catch('')
 const num = z.number().finite().catch(0)
 const bool = (d: boolean) => z.boolean().catch(d)
-const TEMPLATE_IDS = ['classic', 'minimal', 'corporate', 'executive', 'creative', 'elegant', 'compact', 'service', 'retail', 'modern', 'highlight'] as const
+const TEMPLATE_IDS = ['classic', 'minimal', 'corporate', 'executive', 'creative', 'elegant', 'compact', 'service', 'retail', 'modern', 'highlight', 'construction', 'timesheet', 'proforma', 'taxinvoice', 'commercial', 'creditnote', 'receipt', 'medical', 'hotel', 'homeservice'] as const
 
 const discount = z.object({ type: z.enum(['percent', 'fixed']).catch('percent'), value: num }).catch({ type: 'percent', value: 0 })
 const textSection = z.object({ text: str(), visible: bool(false) }).catch({ text: '', visible: false })
@@ -28,6 +28,7 @@ export const businessSchema = z.object({
   id: z.string().max(100).optional().catch(undefined),
   name: str(300), logo, address: str(), email: str(300), phone: str(100), website: str(300),
   taxNumber: str(100), vatNumber: str(100), extra: str(),
+  payment: z.object({ method: str(100), bankName: str(200), accountHolder: str(200), accountNumber: str(100), iban: str(100), swift: str(50), instructions: str(), link: str(500) }).optional().catch(undefined),
 })
 
 const customerKeys = ['name', 'company', 'email', 'phone', 'billingAddress', 'shippingAddress', 'taxId', 'reference'] as const

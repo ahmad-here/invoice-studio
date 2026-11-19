@@ -8,7 +8,7 @@ const STEPS = [
   { name: 'Add the customer', text: 'On the “From & To” tab enter the customer details. Hide fields you don’t need, or add shipping address, tax ID and reference.' },
   { name: 'Add line items', text: 'On the Items tab add products or services with quantity and price. Open “Description, SKU, discount & tax” for more options. Reorder, duplicate or delete items with the buttons on each item.' },
   { name: 'Set discounts, tax and payments', text: 'Add an invoice discount, choose per-item or whole-invoice tax, add shipping, adjustments and any amount already paid. Add bank details on the Payment tab.' },
-  { name: 'Choose a template', text: 'On the Design tab pick one of 11 templates, a paper size (A4, Letter or Legal) and an accent colour. The live preview updates instantly.' },
+  { name: 'Choose a template', text: 'On the Design tab pick one of 21 templates, a paper size (A4, Letter or Legal) and an accent colour. The live preview updates instantly.' },
   { name: 'Save, download or print', text: 'Click Save invoice, then PDF to download or Print to print. Saved invoices appear under Saved, where you can edit, duplicate or download them again.' },
 ]
 

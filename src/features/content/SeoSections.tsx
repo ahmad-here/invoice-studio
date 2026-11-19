@@ -7,10 +7,10 @@ export function HomeSeoSections() {
   const steps = [
     ['Add your business', 'Enter your company name, logo, address and tax or VAT number once. Save several business profiles if you run more than one.'],
     ['Fill in the invoice', 'Pick or add a client, add products or services, quantities, prices, discounts and tax. Totals are calculated for you.'],
-    ['Download, print or share', 'Choose one of 11 invoice templates and download a PDF invoice, print it, or share it by email or WhatsApp.'],
+    ['Download, print or share', 'Choose one of 21 invoice templates and download a PDF invoice, print it, or share it by email or WhatsApp.'],
   ]
   const features = [
-    { icon: LayoutTemplate, t: '11 free invoice templates', d: 'Professional designs for freelancers, agencies, shops and service businesses.', to: '/templates' },
+    { icon: LayoutTemplate, t: '21 free invoice templates', d: 'Professional designs for freelancers, agencies, shops and service businesses.', to: '/templates' },
     { icon: FileSpreadsheet, t: 'Bulk invoice generator', d: 'Create hundreds of invoices from one CSV or JSON file and download a ZIP or combined PDF.', to: '/bulk' },
     { icon: FileDown, t: 'PDF invoice download', d: 'Pixel-perfect A4, US Letter and Legal PDFs with multi-page support.', to: '/features' },
     { icon: Calculator, t: 'Tax, GST & VAT ready', d: 'Per-item or invoice-level tax, discounts, shipping and amount paid — calculated to the cent.', to: '/features' },

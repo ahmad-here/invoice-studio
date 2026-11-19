@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef } from 'react'
 import { NavLink, Outlet, matchPath, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
-import { ChevronLeft, FolderOpen, Home, Layers, Plus, Settings } from 'lucide-react'
+import { Building2, ChevronLeft, FolderOpen, Home, Plus, Settings } from 'lucide-react'
 import { Spinner, Toaster, cx } from '@/components/common/ui'
 import { useAppBar } from '@/app/appBar'
 import { haptic, onBackButton } from '@/services/native'
@@ -10,12 +10,12 @@ import { Tour } from './Tour'
 /** Screen titles for the app bar. */
 const TITLES: [string, string][] = [
   ['/', 'Invoice Studio'], ['/create', 'New invoice'], ['/edit/:id', 'Edit invoice'], ['/templates', 'Templates'],
-  ['/bulk', 'Bulk generate'], ['/invoices', 'Invoices'], ['/clients', 'Clients'], ['/settings', 'Settings'], ['/features', 'Features'],
+  ['/bulk', 'Bulk generate'], ['/invoices', 'Invoices'], ['/clients', 'Clients'], ['/business', 'My business'], ['/settings', 'Settings'], ['/features', 'Features'],
   ['/how-to-use', 'How to use'], ['/faq', 'FAQ'], ['/support', 'Help & support'], ['/contact', 'Contact us'],
   ['/privacy', 'Privacy policy'], ['/terms', 'Terms of service'], ['/download', 'Get the app'],
 ]
 /** Top-level tabs show no back arrow. */
-const ROOTS = ['/', '/invoices', '/bulk', '/settings']
+const ROOTS = ['/', '/invoices', '/business', '/settings']
 /** Focused task screens hide the tab bar (like native detail screens). */
 const FOCUS = ['/create', '/edit/:id']
 
@@ -23,7 +23,7 @@ const TABS = [
   { to: '/', label: 'Home', icon: Home, end: true, tour: 'nav-home' },
   { to: '/invoices', label: 'Invoices', icon: FolderOpen, tour: 'nav-invoices' },
   { to: '/create', label: 'Create', icon: Plus, fab: true, tour: 'nav-create' },
-  { to: '/bulk', label: 'Bulk', icon: Layers, tour: 'nav-bulk' },
+  { to: '/business', label: 'Business', icon: Building2, tour: 'nav-business' },
   { to: '/settings', label: 'Settings', icon: Settings, tour: 'nav-settings' },
 ]
 

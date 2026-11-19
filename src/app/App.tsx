@@ -19,6 +19,7 @@ const Contact = lazy(() => import('@/features/content/ContactPage'))
 const Privacy = lazy(() => import('@/features/content/PrivacyPage'))
 const DownloadApp = lazy(() => import('@/features/content/DownloadPage'))
 const Clients = lazy(() => import('@/features/clients/ClientsPage'))
+const Business = lazy(() => import('@/features/business/BusinessPage'))
 const Terms = lazy(() => import('@/features/content/TermsPage'))
 const NotFound = lazy(() => import('@/features/content/NotFoundPage'))
 
@@ -50,6 +51,7 @@ export function App() {
           <Route path="bulk" element={<Bulk />} />
           <Route path="invoices" element={<Saved />} />
           <Route path="clients" element={<Clients />} />
+          <Route path="business" element={<Business />} />
           <Route path="settings" element={<Settings />} />
           <Route path="features" element={<Features />} />
           <Route path="how-to-use" element={<HowTo />} />

@@ -12,6 +12,7 @@ export type LogoPosition = 'left' | 'center' | 'right'
 export type TemplateId =
   | 'classic' | 'minimal' | 'corporate' | 'executive' | 'creative'
   | 'elegant' | 'compact' | 'service' | 'retail' | 'modern' | 'highlight'
+  | 'construction' | 'timesheet' | 'proforma' | 'taxinvoice' | 'commercial' | 'creditnote' | 'receipt' | 'medical' | 'hotel' | 'homeservice'
 
 export interface Discount {
   type: DiscountType
@@ -40,7 +41,11 @@ export interface BusinessProfile {
   taxNumber: string
   vatNumber: string
   extra: string
+  /** this business's payment/bank details, auto-filled on its invoices */
+  payment?: BusinessPayment
 }
+
+export type BusinessPayment = Omit<PaymentDetails, 'visible'>
 
 export interface Customer {
   name: string
@@ -196,11 +201,16 @@ export interface UserPreferences {
   payment: Omit<PaymentDetails, 'visible' | 'instructions'>
 }
 
+export type TemplateCategory = 'General' | 'Industry' | 'Document'
+
 export interface InvoiceTemplate {
   id: TemplateId
   name: string
   description: string
   bestFor: string
+  category?: TemplateCategory
+  /** custom-field labels this template displays prominently */
+  fields?: string[]
 }
 
 export interface BulkImportError {
