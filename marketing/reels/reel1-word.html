@@ -1,0 +1,79 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="engine.css">
+<style>
+  .doc { left: 240px; top: 760px; width: 600px; height: 760px; background: #fff; border: 3px solid #cfd4dc; border-radius: 10px; padding: 40px; }
+  .doc i { display: block; height: 18px; background: #d9dde3; border-radius: 4px; margin: 20px 0; }
+  .x { left: 330px; top: 900px; width: 420px; height: 420px; }
+  .inv { left: 160px; top: 520px; width: 760px; height: 1000px; padding: 56px; border-radius: 28px; }
+  .inv .row { display: flex; justify-content: space-between; align-items: center; }
+  .logo-b { width: 96px; height: 96px; border-radius: 22px; background: var(--blue); }
+  .ttl { font-size: 56px; font-weight: 800; letter-spacing: .04em; }
+  .lbl { font-size: 22px; font-weight: 700; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
+  .client { margin-top: 56px; font-size: 32px; line-height: 1.45; }
+  .item { display: flex; justify-content: space-between; font-size: 30px; padding: 24px 0; border-bottom: 2px solid var(--line); }
+  .total { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; padding: 28px 30px; border-radius: 20px; background: var(--blue); color: #fff; font-size: 40px; font-weight: 800; }
+  .pay { margin-top: 30px; font-size: 26px; color: var(--muted); line-height: 1.5; }
+  .actions { left: 0; right: 0; top: 1360px; display: flex; justify-content: center; gap: 26px; }
+  .tick { color: var(--green); }
+</style></head>
+<body><div class="stage grid-bg">
+  <div class="headline h1 abs" id="h1" style="top:300px">Still making invoices in <span class="red">Word?</span></div>
+  <div class="doc abs" id="doc"><i style="width:60%"></i><i style="width:85%"></i><i style="width:40%;margin-left:30%"></i><i></i><i style="width:70%"></i><i style="width:90%;margin-left:8%"></i><i style="width:55%"></i><i style="width:75%;margin-left:15%"></i></div>
+  <svg class="x abs" id="x" viewBox="0 0 100 100"><path d="M15 15 L85 85 M85 15 L15 85" stroke="#BB2631" stroke-width="10" stroke-linecap="round" fill="none" pathLength="1" stroke-dasharray="1" id="xpath"/></svg>
+  <div class="headline h2 abs" id="h2" style="top:300px">There’s a <span class="blue">faster</span> way.</div>
+  <div class="headline h3 abs" id="cap" style="top:300px"></div>
+
+  <div class="inv card abs" id="inv">
+    <div class="row"><div class="logo-b" id="lg"></div><div class="ttl" id="tt">INVOICE</div></div>
+    <div class="client" id="cl"><div class="lbl">Bill to</div><div id="clname" style="font-weight:700"></div><div style="color:var(--muted)" id="claddr"></div></div>
+    <div style="margin-top:40px">
+      <div class="item" id="i0"><span>Website design</span><b class="tabular">$1,250.00</b></div>
+      <div class="item" id="i1"><span>Hosting · 12 months</span><b class="tabular">$180.00</b></div>
+      <div class="item" id="i2"><span>SEO setup</span><b class="tabular">$1,260.00</b></div>
+    </div>
+    <div class="total" id="tot"><span>Total</span><span class="tabular" id="totv">$0.00</span></div>
+    <div class="pay" id="pay">Bank transfer · Habib Bank · •••• 6356<br>+ 9% tax · Due in 14 days</div>
+  </div>
+
+  <div class="actions abs" id="acts">
+    <span class="pill primary" id="a0">⬇ PDF</span><span class="pill" id="a1">🖨 Print</span><span class="pill" id="a2">↗ Share</span>
+  </div>
+</div>
+<script src="engine.js"></script><script src="endcard.js"></script>
+<script>
+injectEnd('Professional invoices in seconds.')
+window.DURATION = 22
+const { p, win, tf, words, type, count, usd, $, lerp, endCard } = M
+const caps = [[5.0, 7.0, 'Add your <span class="blue">logo</span>'], [7.0, 9.2, 'Pick a <span class="blue">client</span>'], [9.2, 11.6, 'Add your <span class="blue">items</span>'], [11.6, 14.4, 'Totals & tax: <span class="blue">automatic</span>']]
+window.scene = (t) => {
+  // 0–2.6 hook
+  words($('#h1'), t, 0.1, { stagger: 0.09, out: 2.5 })
+  const shake = t < 2.6 ? Math.sin(t * 28) * 6 * p(t, 0.3, 0.3) : 0
+  tf($('#doc'), { r: shake * 0.4, x: shake, o: win(t, 0.2, 4.4), s: lerp(1, 0.85, p(t, 2.6, 1.2)) })
+  $('#xpath').style.strokeDashoffset = String(1 - p(t, 2.7, 0.5))
+  tf($('#x'), { o: win(t, 2.7, 4.4) })
+  words($('#h2'), t, 2.9, { stagger: 0.09, out: 4.5 })
+  // 4.6–14.5 assembly
+  const cap = caps.find(([a, b]) => t >= a && t < b)
+  const ce = $('#cap')
+  if (cap) { if (ce.dataset.k !== String(cap[0])) { ce.innerHTML = cap[2]; ce.dataset.split = ''; ce.dataset.k = String(cap[0]) } words(ce, t, cap[0], { stagger: 0.07, out: cap[1] - 0.05 }) } else ce.style.opacity = '0'
+  if (cap) ce.style.opacity = '1'
+  const invIn = p(t, 4.6, 0.8, 'back'), invOut = p(t, 17.6, 0.5, 'in')
+  tf($('#inv'), { y: (1 - invIn) * 300 + invOut * -80, s: lerp(0.9, 1, invIn) * lerp(1, 0.6, invOut), o: Math.min(p(t, 4.6, 0.4), 1 - invOut) })
+  tf($('#lg'), { s: p(t, 5.2, 0.6, 'elastic'), r: (1 - p(t, 5.2, 0.6)) * -40 })
+  tf($('#tt'), { x: (1 - p(t, 5.5, 0.5)) * 60, o: p(t, 5.5, 0.4) })
+  tf($('#cl'), { o: p(t, 7.1, 0.3) })
+  type($('#clname'), 'Acme Corporation', p(t, 7.2, 0.9, 'linear'))
+  type($('#claddr'), '42 Market Street, Springfield', p(t, 7.9, 0.9, 'linear'))
+  ;[0, 1, 2].forEach((i) => tf($('#i' + i), { x: (1 - p(t, 9.3 + i * 0.45, 0.5, 'back')) * 120, o: p(t, 9.3 + i * 0.45, 0.3) }))
+  tf($('#tot'), { s: lerp(0.9, 1, p(t, 11.6, 0.5, 'back')), o: p(t, 11.6, 0.3) })
+  count($('#totv'), 0, 2932.1, p(t, 11.7, 1.6, 'out'), usd)
+  tf($('#pay'), { o: p(t, 12.8, 0.4) })
+  // 14.5–18 actions
+  ;[0, 1, 2].forEach((i) => tf($('#a' + i), { y: (1 - p(t, 14.6 + i * 0.25, 0.5, 'back')) * 120, o: Math.min(p(t, 14.6 + i * 0.25, 0.3), 1 - p(t, 17.6, 0.4)) }))
+  if (t > 16.2) { $('#a0').innerHTML = '<span class="tick" style="color:#fff">✓</span> PDF ready' }
+  else $('#a0').innerHTML = '⬇ PDF'
+  // 18–22 end
+  endCard(t, 18)
+}
+</script></body></html>

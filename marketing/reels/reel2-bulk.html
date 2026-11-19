@@ -1,0 +1,82 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="engine.css">
+<style>
+  .big { left: 70px; top: 300px; font-size: 200px; font-weight: 900; letter-spacing: -0.05em; line-height: .95; }
+  .sheet { left: 120px; top: 760px; width: 840px; padding: 26px; border-radius: 28px; }
+  .sheet .r { display: grid; grid-template-columns: 1.1fr 1.6fr 1.6fr .7fr 1fr; gap: 10px; font-size: 24px; padding: 14px 10px; border-bottom: 2px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+  .sheet .r.h { font-weight: 800; color: var(--blue7); background: var(--sky); border-radius: 12px; border: 0; }
+  .file { left: 380px; top: 700px; width: 320px; padding: 30px; border-radius: 28px; text-align: center; font-size: 34px; font-weight: 700; }
+  .file .ic { width: 120px; height: 150px; margin: 0 auto 18px; border-radius: 16px; background: linear-gradient(#22c55e, #15803d); color: #fff; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 18px; font-size: 32px; font-weight: 900; }
+  .drop { left: 140px; top: 1200px; width: 800px; height: 260px; border: 6px dashed #9cc9f5; border-radius: 36px; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 700; color: var(--blue7); background: rgba(234,245,255,.6); }
+  .mini { position: absolute; width: 120px; height: 160px; background: #fff; border-radius: 14px; box-shadow: 0 10px 24px -10px rgba(16,24,40,.35); padding: 14px; }
+  .mini i { display: block; height: 10px; border-radius: 4px; background: #dfe7f1; margin: 9px 0; }
+  .mini i.b { background: var(--blue); width: 60%; }
+  .counter { left: 70px; top: 300px; font-size: 150px; font-weight: 900; letter-spacing: -0.04em; color: var(--blue); }
+  .counter small { display: block; font-size: 48px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+  .status { left: 70px; right: 130px; top: 1260px; display: flex; flex-wrap: wrap; gap: 18px; }
+  .ok { background: #ecfdf3; color: var(--green); }
+  .warn { background: #fff7e6; color: #b45309; }
+  .zip { left: 300px; top: 820px; width: 480px; padding: 50px; border-radius: 40px; text-align: center; }
+  .zip .ic { width: 220px; height: 260px; margin: 0 auto 26px; border-radius: 26px; background: linear-gradient(#fbbf24, #d97706); position: relative; }
+  .zip .ic::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 30%; width: 22px; margin-left: -11px; background: repeating-linear-gradient(#fff 0 14px, transparent 14px 28px); opacity: .85; }
+  .zip b { font-size: 46px; } .zip div { font-size: 32px; color: var(--muted); margin-top: 8px; }
+</style></head>
+<body><div class="stage grid-bg">
+  <div class="big abs" id="hook"><span class="blue tabular" id="hn">0</span><br>invoices.<br><span style="font-size:110px">One <span class="blue">click.</span></span></div>
+  <div class="headline h3 abs" id="c1" style="top:300px">Export your orders as <span class="blue">CSV</span> or JSON…</div>
+  <div class="sheet card abs" id="sheet">
+    <div class="r h"><span>invoice</span><span>customer</span><span>item</span><span>qty</span><span>price</span></div>
+    <div class="r" id="r0"><span>INV-001</span><span>Acme Corp</span><span>Web design</span><span>1</span><span>500.00</span></div>
+    <div class="r" id="r1"><span>INV-001</span><span>Acme Corp</span><span>Hosting</span><span>12</span><span>15.00</span></div>
+    <div class="r" id="r2"><span>INV-002</span><span>Jane Doe</span><span>SEO</span><span>2</span><span>200.00</span></div>
+    <div class="r" id="r3"><span>INV-003</span><span>Müller GmbH</span><span>Consulting</span><span>8</span><span>120.00</span></div>
+    <div class="r" id="r4"><span>INV-004</span><span>Lopez Studio</span><span>Logo pack</span><span>1</span><span>350.00</span></div>
+    <div class="r" id="r5"><span>…</span><span>…</span><span>…</span><span>…</span><span>…</span></div>
+  </div>
+  <div class="file card abs" id="file"><div class="ic">CSV</div>orders.csv</div>
+  <div class="drop abs" id="drop">Drop it into Bulk generate</div>
+  <div class="counter abs tabular" id="ctr"><span id="cn">0</span><small>invoices generated</small></div>
+  <div id="minis"></div>
+  <div class="status abs" id="st"><span class="chip ok" id="s0">✓ 397 ready</span><span class="chip warn" id="s1">⚠ 3 rows need a fix</span><span class="chip" id="s2">Rows grouped by invoice no.</span></div>
+  <div class="headline h3 abs" id="c2" style="top:300px">Download as <span class="blue">ZIP</span> or one <span class="blue">combined PDF</span></div>
+  <div class="zip card abs" id="zip"><div class="ic"></div><b>Invoices.zip</b><div>397 PDFs · ready</div></div>
+</div>
+<script src="engine.js"></script><script src="endcard.js"></script>
+<script>
+injectEnd('Hundreds of invoices from one file.', ['Free bulk generator', 'CSV & JSON', 'Private'])
+window.DURATION = 22
+const { p, win, tf, words, count, $, lerp, endCard } = M
+// pre-build a grid of mini invoices
+const box = $('#minis'); const COLS = 6, ROWS = 6
+for (let i = 0; i < COLS * ROWS; i++) { const d = document.createElement('div'); d.className = 'mini'; d.innerHTML = '<i class="b"></i><i></i><i style="width:80%"></i><i></i><i style="width:50%"></i>'; box.appendChild(d) }
+const minis = [...box.children]
+window.scene = (t) => {
+  // 0–2.8 hook: counter 0→400
+  count($('#hn'), 0, 400, p(t, 0.1, 1.4, 'out'))
+  tf($('#hook'), { y: (1 - p(t, 0, 0.5, 'back')) * 80, o: Math.min(p(t, 0, 0.3), 1 - p(t, 2.6, 0.4, 'in')) })
+  // 3–7.4 spreadsheet + file drop
+  words($('#c1'), t, 3.0, { stagger: 0.07, out: 7.3 })
+  tf($('#sheet'), { y: (1 - p(t, 3.2, 0.6, 'back')) * 200, o: Math.min(p(t, 3.2, 0.4), 1 - p(t, 5.4, 0.4, 'in')), s: lerp(1, 0.85, p(t, 5.4, 0.5)) })
+  for (let i = 0; i < 6; i++) tf($('#r' + i), { x: (1 - p(t, 3.5 + i * 0.15, 0.4)) * 60, o: p(t, 3.5 + i * 0.15, 0.3) })
+  const fIn = p(t, 5.5, 0.5, 'back'), fDrop = p(t, 6.3, 0.7, 'inOut')
+  tf($('#file'), { y: lerp(0, 470, fDrop), s: lerp(0.6, 1, fIn) * lerp(1, 0.7, fDrop), r: lerp(-8, 0, fIn), o: Math.min(p(t, 5.5, 0.3), 1 - p(t, 7.1, 0.3)) })
+  tf($('#drop'), { o: Math.min(p(t, 5.6, 0.4), 1 - p(t, 7.3, 0.3)), s: 1 + 0.04 * Math.sin(Math.max(0, t - 6.9) * 18) * (1 - p(t, 7.0, 0.4)) })
+  // 7.4–13 invoices burst into a grid + counter
+  tf($('#ctr'), { o: Math.min(p(t, 7.4, 0.4), 1 - p(t, 15.7, 0.3)), y: (1 - p(t, 7.4, 0.5, 'back')) * 60 })
+  count($('#cn'), 0, 397, p(t, 7.6, 4.2, 'inOut'))
+  minis.forEach((m, i) => {
+    const c = i % COLS, r = Math.floor(i / COLS)
+    const tx = 95 + c * 150, ty = 600 + r * 185
+    const k = p(t, 7.6 + i * 0.1, 0.55, 'back')
+    const collapse = p(t, 16.0, 0.6, 'inOut')
+    m.style.left = '0'; m.style.top = '0'
+    tf(m, { x: lerp(lerp(470, tx, k), 480, collapse), y: lerp(lerp(1300, ty, k), 1000, collapse), s: lerp(0.4, 1, k) * lerp(1, 0.2, collapse), r: (1 - k) * (c - 2.5) * 12, o: Math.min(p(t, 7.6 + i * 0.1, 0.2), 1 - collapse) })
+  })
+  // 12.3–15.8 validation chips
+  ;[0, 1, 2].forEach((i) => tf($('#s' + i), { y: (1 - p(t, 12.4 + i * 0.3, 0.5, 'back')) * 70, o: Math.min(p(t, 12.4 + i * 0.3, 0.3), 1 - p(t, 15.7, 0.3)) }))
+  // 16–19 ZIP
+  words($('#c2'), t, 16.1, { stagger: 0.06, out: 19.0 })
+  tf($('#zip'), { s: lerp(0.5, 1, p(t, 16.5, 0.7, 'back')), o: Math.min(p(t, 16.5, 0.3), 1 - p(t, 18.9, 0.3)) })
+  endCard(t, 19)
+}
+</script></body></html>

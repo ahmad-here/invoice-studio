@@ -1,0 +1,61 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="engine.css">
+<style>
+  .calc { left: 120px; top: 640px; width: 840px; padding: 50px; }
+  .ln { display: flex; justify-content: space-between; align-items: baseline; font-size: 52px; padding: 22px 0; border-bottom: 3px solid var(--line); font-variant-numeric: tabular-nums; }
+  .ln span:first-child { color: var(--muted); font-weight: 600; }
+  .ln b { font-weight: 800; }
+  .ln.tot { border: 0; margin-top: 18px; padding: 30px 34px; border-radius: 26px; background: var(--blue); color: #fff; font-size: 62px; }
+  .ln.tot span:first-child { color: #fff; }
+  .neg { color: var(--red); }
+  .cur { left: 70px; right: 130px; top: 1460px; display: flex; flex-wrap: wrap; gap: 14px; }
+  .cur .chip.on { background: var(--blue); color: #fff; }
+  .words { left: 120px; top: 760px; width: 840px; padding: 50px; }
+  .words .lbl { font-size: 30px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .words .txt { margin-top: 18px; font-size: 54px; font-weight: 700; line-height: 1.25; min-height: 280px; }
+  .sum { margin-top: 30px; font-size: 28px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 22px; border-radius: 18px; background: var(--sky); color: var(--blue7); font-weight: 700; font-variant-numeric: tabular-nums; }
+</style></head>
+<body><div class="stage grid-bg">
+  <div class="headline h1 abs" id="h1" style="top:300px">One wrong decimal = <span class="red">lost money.</span></div>
+  <div class="headline h3 abs" id="c1" style="top:300px">Discounts, tax & totals — <span class="blue">calculated to the cent.</span></div>
+  <div class="calc card abs" id="calc">
+    <div class="ln" id="l0"><span>Subtotal</span><b id="v0">$0.00</b></div>
+    <div class="ln" id="l1"><span>Discount 10%</span><b class="neg" id="v1">−$0.00</b></div>
+    <div class="ln" id="l2"><span>VAT 18%</span><b id="v2">$0.00</b></div>
+    <div class="ln tot" id="l3"><span>Total</span><b id="v3">$0.00</b></div>
+  </div>
+  <div class="cur abs" id="cur"></div>
+  <div class="headline h3 abs" id="c2" style="top:300px"><span class="blue">10 currencies.</span> Formatted the right way.</div>
+  <div class="headline h3 abs" id="c3" style="top:300px">GST/VAT <span class="blue">tax invoices</span> ready to send.</div>
+  <div class="words card abs" id="wd"><div class="lbl">Amount in words</div><div class="txt" id="wt"></div><div class="sum"><span>Rate 18%</span><span>Taxable $2,421.00</span><span>Tax $435.78</span></div></div>
+</div>
+<script src="engine.js"></script><script src="endcard.js"></script>
+<script>
+injectEnd('Accurate invoices, every time.', ['GST / VAT ready', '10 currencies', 'Free'])
+window.DURATION = 23
+const { p, win, tf, words, type, count, $, $$, lerp, endCard } = M
+// total = 2,690.00 − 269.00 + 435.78 = 2,856.78
+const CUR = [['USD', 'en-US'], ['EUR', 'de-DE'], ['GBP', 'en-GB'], ['PKR', 'en-PK'], ['AED', 'en-AE'], ['SAR', 'en-SA'], ['INR', 'en-IN'], ['CAD', 'en-CA'], ['AUD', 'en-AU'], ['JPY', 'ja-JP']]
+const curBox = $('#cur'); CUR.forEach(([c]) => { const s = document.createElement('span'); s.className = 'chip'; s.textContent = c; curBox.appendChild(s) })
+const fmt = (v, i) => new Intl.NumberFormat(CUR[i][1], { style: 'currency', currency: CUR[i][0] }).format(CUR[i][0] === 'JPY' ? Math.round(v) : v)
+window.scene = (t) => {
+  words($('#h1'), t, 0.1, { stagger: 0.08, out: 2.8 })
+  words($('#c1'), t, 3.0, { stagger: 0.06, out: 10.6 })
+  const ci = t < 10.8 ? 0 : Math.min(CUR.length - 1, Math.floor((t - 10.8) / 0.55))
+  const f = (v) => fmt(v, ci)
+  tf($('#calc'), { y: (1 - p(t, 3.2, 0.7, 'back')) * 300, o: Math.min(p(t, 3.2, 0.4), 1 - p(t, 16.4, 0.4)) })
+  ;[0, 1, 2, 3].forEach((i) => tf($('#l' + i), { x: (1 - p(t, 3.8 + i * 1.3, 0.5, 'back')) * 100, o: p(t, 3.8 + i * 1.3, 0.3) }))
+  $('#v0').textContent = f(lerp(0, 2690, p(t, 3.9, 0.9)))
+  $('#v1').textContent = '−' + f(lerp(0, 269, p(t, 5.2, 0.9)))
+  $('#v2').textContent = f(lerp(0, 435.78, p(t, 6.5, 0.9)))
+  $('#v3').textContent = f(lerp(0, 2856.78, p(t, 7.8, 1.3)))
+  tf($('#l3'), { s: 1 + 0.05 * Math.sin(Math.max(0, t - 9.1) * 12) * (1 - p(t, 9.1, 0.6)), o: p(t, 7.7, 0.3) })
+  words($('#c2'), t, 10.8, { stagger: 0.06, out: 16.4 })
+  tf($('#cur'), { o: Math.min(p(t, 10.8, 0.4), 1 - p(t, 16.4, 0.3)) })
+  $$('#cur .chip').forEach((c, i) => c.classList.toggle('on', t >= 10.8 && i === ci))
+  words($('#c3'), t, 16.6, { stagger: 0.06, out: 20.0 })
+  tf($('#wd'), { y: (1 - p(t, 16.8, 0.6, 'back')) * 200, o: Math.min(p(t, 16.8, 0.3), 1 - p(t, 19.9, 0.3)) })
+  type($('#wt'), 'Two thousand eight hundred and fifty-six US dollars and seventy-eight cents only', p(t, 17.3, 2.0, 'linear'))
+  endCard(t, 20)
+}
+</script></body></html>

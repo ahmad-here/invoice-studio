@@ -1,0 +1,61 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="engine.css">
+<style>
+  .tpl { position: absolute; left: 0; top: 0; width: 520px; border-radius: 18px; box-shadow: 0 30px 70px -20px rgba(16,24,40,.35); background: #fff; }
+  .tplname { position: absolute; left: 0; right: 0; top: 1500px; text-align: center; font-size: 52px; font-weight: 800; }
+  .cats { left: 70px; right: 130px; top: 560px; display: flex; flex-wrap: wrap; gap: 16px; }
+  .cat.on { background: var(--blue); color: #fff; }
+  .swatches { left: 0; right: 0; top: 1500px; display: flex; justify-content: center; gap: 22px; }
+  .sw { width: 86px; height: 86px; border-radius: 50%; border: 6px solid #fff; box-shadow: 0 8px 20px -6px rgba(16,24,40,.35); }
+</style></head>
+<body><div class="stage grid-bg">
+  <div class="headline h1 abs" id="h1" style="top:300px">Your invoice is your <span class="blue">brand.</span></div>
+  <div class="headline h2 abs" id="h2" style="top:300px"><span class="blue">21</span> professional templates</div>
+  <div class="cats abs" id="cats"><span class="chip cat" id="k0">General</span><span class="chip cat" id="k1">Industry</span><span class="chip cat" id="k2">Tax · Proforma · Receipt</span></div>
+  <div id="deck"></div>
+  <div class="tplname" id="nm"></div>
+  <div class="headline h2 abs" id="h3" style="top:300px">Your logo. Your <span class="blue">colours.</span></div>
+  <img class="tpl" id="hero" src="assets/tpl-corporate.png" alt="">
+  <div class="swatches abs" id="sws"><span class="sw" style="background:#0692F4"></span><span class="sw" style="background:#7048E8"></span><span class="sw" style="background:#0C8599"></span><span class="sw" style="background:#D9480F"></span><span class="sw" style="background:#202938"></span></div>
+</div>
+<script src="engine.js"></script><script src="endcard.js"></script>
+<script>
+injectEnd('21 free invoice templates.', ['Logo & colours', 'A4 · Letter · Legal', 'PDF & print'])
+window.DURATION = 21
+const { p, win, tf, words, $, $$, lerp, endCard } = M
+const list = [
+  ['classic', 'Classic Professional', 0], ['highlight', 'Highlight', 0], ['corporate', 'Corporate Blue', 0], ['executive', 'Executive', 0], ['creative', 'Creative Studio', 0],
+  ['construction', 'Construction', 1], ['timesheet', 'Hourly Timesheet', 1], ['hotel', 'Hotel Folio', 1], ['medical', 'Medical', 1],
+  ['taxinvoice', 'Tax Invoice (GST/VAT)', 2], ['proforma', 'Proforma', 2], ['receipt', 'Payment Receipt', 2],
+]
+const deck = $('#deck')
+list.forEach(([id]) => { const im = document.createElement('img'); im.className = 'tpl'; im.src = `assets/tpl-${id}.png`; deck.appendChild(im) })
+const cards = [...deck.children]
+const START = 2.8, STEP = 0.75
+window.scene = (t) => {
+  words($('#h1'), t, 0.1, { stagger: 0.09, out: 2.6 })
+  words($('#h2'), t, 2.8, { stagger: 0.08, out: 12.2 })
+  tf($('#cats'), { o: Math.min(p(t, 3.2, 0.4), 1 - p(t, 12.0, 0.3)) })
+  // carousel: the focused card is centred; neighbours fan out left/right
+  const f = (t - START) / STEP
+  cards.forEach((c, i) => {
+    const d = i - f
+    const vis = Math.min(p(t, START + i * 0.04, 0.4), 1 - p(t, 12.1, 0.4))
+    const x = 280 + d * 430, y = 700 + Math.abs(d) * 70
+    tf(c, { x, y, r: d * 8, s: 1 - Math.min(Math.abs(d), 2) * 0.16, o: vis * (Math.abs(d) < 2.2 ? 1 : 0) })
+    c.style.zIndex = String(100 - Math.round(Math.abs(d) * 10))
+  })
+  const idx = Math.max(0, Math.min(list.length - 1, Math.round(f)))
+  const nm = $('#nm'); nm.textContent = list[idx][1]
+  tf(nm, { o: t > START && t < 12.1 ? 1 : 0 })
+  $$('.cat').forEach((k, i) => k.classList.toggle('on', t > START && list[idx][2] === i))
+  // 12.4–17: colours
+  words($('#h3'), t, 12.4, { stagger: 0.08, out: 17.1 })
+  tf($('#hero'), { x: 280, y: 520, s: lerp(0.6, 1, p(t, 12.5, 0.7, 'back')), o: Math.min(p(t, 12.5, 0.3), 1 - p(t, 16.9, 0.3)) })
+  const hue = t > 13.4 ? [0, 60, 330, 175, 0][Math.min(4, Math.floor((t - 13.4) / 0.7))] : 0
+  const gray = t > 13.4 + 0.7 * 4 ? 1 : 0
+  $('#hero').style.filter = `hue-rotate(${hue}deg) grayscale(${gray})`
+  $$('.sw').forEach((s, i) => { const on = t > 13.4 + i * 0.7 && t < 13.4 + (i + 1) * 0.7; tf(s, { s: on ? 1.25 : lerp(0.5, 1, p(t, 12.9 + i * 0.1, 0.4, 'back')), o: Math.min(p(t, 12.9 + i * 0.1, 0.3), 1 - p(t, 16.9, 0.3)) }) })
+  endCard(t, 17)
+}
+</script></body></html>
