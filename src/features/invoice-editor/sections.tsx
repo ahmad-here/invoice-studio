@@ -1,6 +1,6 @@
 import { memo, useCallback, useRef, useState } from 'react'
 import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, Plus, Trash2, GripVertical, X, Check } from 'lucide-react'
-import type { PaymentDetails, Client, BusinessProfile, CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals } from '@/types/invoice'
+import type { SavedPaymentMethod, Client, BusinessProfile, CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals } from '@/types/invoice'
 import { Button, Input, Segmented, Select, Switch, Textarea, cx, Badge } from '@/components/common/ui'
 import { DiscountField, MoneyInput, NumberInput } from '@/components/forms/inputs'
 import { CURRENCIES, formatMoney, convertMinorPrecision, currencyDecimals } from '@/lib/money'
@@ -17,7 +17,7 @@ export { Section, LogoEditor }
 import { sampleInvoice } from '@/lib/sample'
 import { clientToCustomer } from '@/lib/clients'
 import { completion } from '@/lib/completion'
-import { hasPaymentDetails } from '@/lib/payment'
+import { hasPaymentDetails, methodSummary, methodToPayment, toBusinessPayment } from '@/lib/payment'
 
 export type Update = (patch: Partial<Invoice> | ((inv: Invoice) => Partial<Invoice>)) => void
 interface P { inv: Invoice; update: Update }
@@ -94,7 +94,7 @@ export const BusinessSection = memo(function BusinessSection({ inv, update, prof
       {profiles.length > 0 && (
         <Select label="Business profile" className="mb-4" data-tour="business-select" value={profiles.some((x) => x.id === inv.businessId) ? inv.businessId : ''} onChange={(e) => {
           const pick = profiles.find((x) => x.id === e.target.value)
-          if (pick) update((i) => ({ business: structuredClone(pick), businessId: pick.id, payment: hasPaymentDetails(pick.payment) ? { ...pick.payment!, visible: true } : i.payment }))
+          if (pick) update({ business: structuredClone(pick), businessId: pick.id })
           else update({ businessId: undefined })
         }}>
           <option value="">Custom (this invoice only)</option>
@@ -291,18 +291,30 @@ const Row = ({ k, v, strong }: { k: string; v: string; strong?: boolean }) => (
 )
 
 /* ------------------------------ Payment ------------------------------ */
-export const PaymentSection = memo(function PaymentSection({ inv, update, saved, onSaveDefault }: P & { saved?: PaymentDetails | null; onSaveDefault?: () => void }) {
+export const PaymentSection = memo(function PaymentSection({ inv, update, methods = [], onSaveNew, onUpdateSaved }: P & { methods?: SavedPaymentMethod[]; onSaveNew?: () => void; onUpdateSaved?: () => void }) {
   const p = inv.payment
   const set = (k: keyof typeof p, v: string | boolean) => update((i) => ({ payment: { ...i.payment, [k]: v } }))
+  const current = methods.find((m) => m.id === inv.paymentMethodId)
+  const changed = !!current && JSON.stringify(toBusinessPayment(p)) !== JSON.stringify(toBusinessPayment(methodToPayment(current)))
   return (
     <Section title="Payment information" complete={completion(inv).payment} aside={<Switch label="Show on invoice" checked={p.visible} onChange={(v) => set('visible', v)} />}>
-      {(saved || onSaveDefault) && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-canvas px-3 py-2.5">
-          <span className="mr-auto text-[13px] text-muted">{saved ? `Saved details for ${inv.business.name || 'this business'}` : 'Save these details so every new invoice is filled in automatically.'}</span>
-          {saved && <Button size="sm" onClick={() => update({ payment: { ...saved, visible: true } })}>Use saved details</Button>}
-          {onSaveDefault && hasPaymentDetails(p) && <Button size="sm" variant="ghost" onClick={onSaveDefault}>Save as default for this business</Button>}
-        </div>
-      )}
+      <div className="mb-4 rounded-xl bg-canvas p-3">
+        <Select label="Saved payment method" value={current ? current.id : ''} hint={methods.length ? 'Your default method is filled in automatically. Manage methods in Settings.' : 'Save payment methods in Settings → Payment methods to fill them in automatically.'}
+          onChange={(e) => {
+            const m = methods.find((x) => x.id === e.target.value)
+            if (m) update({ payment: methodToPayment(m), paymentMethodId: m.id })
+            else update({ paymentMethodId: undefined })
+          }}>
+          <option value="">Custom (this invoice only)</option>
+          {methods.map((m) => <option key={m.id} value={m.id}>{m.label || methodSummary(m)}</option>)}
+        </Select>
+        {hasPaymentDetails(p) && (onSaveNew || onUpdateSaved) && (!current || changed) && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {current && changed && onUpdateSaved && <Button size="sm" onClick={onUpdateSaved}>Update “{current.label}”</Button>}
+            {onSaveNew && <Button size="sm" variant="ghost" icon={<Plus className="size-4" />} onClick={onSaveNew}>Save as new payment method</Button>}
+          </div>
+        )}
+      </div>
       <div className={cx('grid gap-4 sm:grid-cols-2', !p.visible && 'opacity-60')}>
         <Input label="Payment method" value={p.method} maxLength={60} placeholder="Bank transfer" onChange={(e) => set('method', e.target.value)} />
         <Input label="Bank name" value={p.bankName} maxLength={100} onChange={(e) => set('bankName', e.target.value)} />

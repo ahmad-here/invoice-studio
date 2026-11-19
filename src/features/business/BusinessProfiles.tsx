@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Building2, Check, Plus, Star, Trash2 } from 'lucide-react'
-import type { BusinessPayment, BusinessProfile } from '@/types/invoice'
+import type { BusinessProfile } from '@/types/invoice'
 import { useApp, toast } from '@/app/store'
 import { Badge, Button, ConfirmDialog, Input, Textarea, cx } from '@/components/common/ui'
 import { Section } from '@/components/common/Section'
@@ -20,8 +20,6 @@ export function BusinessProfiles() {
 
   const dirty = JSON.stringify(form) !== JSON.stringify(current ?? emptyBusiness())
   const set = (k: keyof BusinessProfile, v: string) => setForm({ ...form, [k]: v })
-  const pay: BusinessPayment = form.payment ?? { method: 'Bank transfer', bankName: '', accountHolder: '', accountNumber: '', iban: '', swift: '', instructions: '', link: '' }
-  const setPay = (k: keyof BusinessPayment, v: string) => setForm({ ...form, payment: { ...pay, [k]: v } })
 
   const save = async () => {
     if (!form.name.trim()) { toast.error('Give the business a name.'); return }
@@ -75,18 +73,6 @@ export function BusinessProfiles() {
           <Input label="Tax registration no." value={form.taxNumber} onChange={(e) => set('taxNumber', e.target.value)} />
           <Input label="VAT number" value={form.vatNumber} onChange={(e) => set('vatNumber', e.target.value)} />
           <Textarea label="Additional information" className="sm:col-span-2" rows={2} value={form.extra} onChange={(e) => set('extra', e.target.value)} />
-          <div className="sm:col-span-2 mt-2 border-t border-line pt-4">
-            <h4 className="text-sm font-semibold text-ink">Payment details</h4>
-            <p className="text-xs text-muted">Filled in automatically on every invoice from this business.</p>
-          </div>
-          <Input label="Payment method" placeholder="Bank transfer" value={pay.method} onChange={(e) => setPay('method', e.target.value)} />
-          <Input label="Bank name" value={pay.bankName} onChange={(e) => setPay('bankName', e.target.value)} />
-          <Input label="Account holder" value={pay.accountHolder} onChange={(e) => setPay('accountHolder', e.target.value)} />
-          <Input label="Account number" value={pay.accountNumber} onChange={(e) => setPay('accountNumber', e.target.value)} />
-          <Input label="IBAN" value={pay.iban} onChange={(e) => setPay('iban', e.target.value.toUpperCase())} />
-          <Input label="SWIFT / BIC" value={pay.swift} onChange={(e) => setPay('swift', e.target.value.toUpperCase())} />
-          <Input label="Payment link" type="url" placeholder="https://" className="sm:col-span-2" value={pay.link} onChange={(e) => setPay('link', e.target.value)} />
-          <Textarea label="Payment instructions" rows={2} className="sm:col-span-2" value={pay.instructions} onChange={(e) => setPay('instructions', e.target.value)} />
         </div>
         <div className="mt-4 flex flex-wrap justify-end gap-2">
           {dirty && <Button onClick={() => setForm(current ? structuredClone(current) : emptyBusiness())}>Discard</Button>}

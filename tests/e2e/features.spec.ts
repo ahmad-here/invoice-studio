@@ -162,22 +162,50 @@ test('typing in a dialog keeps focus in the field being edited', async ({ page }
   await expect(d.getByLabel('Contact name')).toHaveValue('Ali Raza')
 })
 
-test('business payment details are filled in automatically on new invoices', async ({ page }) => {
-  await page.goto('/business')
-  await page.getByLabel('Business name').fill('Pay Ready Ltd')
-  await page.getByLabel('Bank name').fill('Northwind Bank')
-  await page.getByLabel('Account number').fill('12345678')
-  await page.getByRole('button', { name: 'Add business' }).last().click()
-  await expect(page.getByText('“Pay Ready Ltd” saved.')).toBeVisible()
+test('saved payment methods: default fills new invoices, switch or save new from the invoice', async ({ page }) => {
+  await page.goto('/settings')
+  await page.getByRole('button', { name: 'Add your first payment method' }).click()
+  let d = page.getByRole('dialog')
+  await d.getByLabel('Name for this method').fill('HBL current')
+  await d.getByLabel('Bank name').fill('Habib Bank Limited')
+  await d.getByLabel('Account number').fill('345346356356')
+  await d.getByRole('button', { name: 'Save method' }).click()
+  await page.getByRole('button', { name: 'Add method' }).click()
+  d = page.getByRole('dialog')
+  await d.getByLabel('Name for this method').fill('PayPal')
+  await d.getByLabel('Payment link').fill('paypal.me/ahmad')
+  await d.getByRole('button', { name: 'Save method' }).click()
+  await expect(page.getByRole('list', { name: 'Payment methods' }).getByRole('listitem')).toHaveCount(2)
+
+  // default (first) fills new invoice automatically
   await page.goto('/create')
   await page.getByRole('tab', { name: 'Payment' }).click()
-  await expect(page.getByLabel('Bank name')).toHaveValue('Northwind Bank')
-  await expect(page.getByLabel('Account number')).toHaveValue('12345678')
-  await expect(page.getByLabel('Invoice preview')).toContainText('Northwind Bank')
-  // details typed on an invoice can be saved back to the business
-  await page.getByLabel('IBAN').fill('GB00TEST123')
-  await page.getByRole('button', { name: 'Save as default for this business' }).click()
-  await expect(page.getByText(/Payment details saved for Pay Ready Ltd/)).toBeVisible()
+  await expect(page.getByLabel('Bank name')).toHaveValue('Habib Bank Limited')
+  await expect(page.getByLabel('Invoice preview')).toContainText('Habib Bank Limited')
+  // switch to another saved method
+  await page.getByLabel('Saved payment method').selectOption({ label: 'PayPal' })
+  await expect(page.getByLabel('Payment link')).toHaveValue('paypal.me/ahmad')
+  // custom details can be saved as a new method
+  await page.getByLabel('Saved payment method').selectOption({ label: 'Custom (this invoice only)' })
+  await page.getByLabel('Bank name').fill('Meezan Bank')
+  await page.getByRole('button', { name: 'Save as new payment method' }).click()
+  await expect(page.getByText(/to your payment methods/)).toBeVisible()
+})
+
+test('a saved draft explains it is not issued and can be finalized', async ({ page }) => {
+  await page.goto('/create')
+  await page.getByRole('tab', { name: 'From & To' }).click()
+  await page.getByLabel('Customer name').fill('Draft Client')
+  await page.getByRole('button', { name: 'Save as draft' }).first().click()
+  await expect(page.getByText('This invoice is a draft')).toBeVisible()
+  await page.getByRole('tab', { name: 'Items' }).click()
+  await page.getByTestId('item-row').first().getByLabel('Item name').fill('Work')
+  await page.getByTestId('item-row').first().getByLabel('Unit price').fill('50')
+  await page.getByRole('button', { name: 'Save as draft' }).first().click()
+  await page.getByRole('button', { name: 'Finalize invoice' }).click()
+  await expect(page.getByRole('dialog', { name: /saved/ })).toBeVisible()
+  await page.goto('/')
+  await expect(page.getByText('Issued invoices').locator('..')).toContainText('1')
 })
 
 test('templates page filters by category and editor offers recommended fields', async ({ page }) => {

@@ -65,7 +65,7 @@ function Dashboard() {
         </section>
       )}
       {invoices.length > 0 && <section aria-label="Statistics" className="grid grid-cols-3 gap-3 sm:gap-4">
-        {[{ k: 'Invoices created', v: stats.total }, { k: 'This month', v: stats.month }, { k: 'Drafts', v: stats.drafts }].map((s) => (
+        {[{ k: 'Issued invoices', v: stats.total }, { k: 'This month', v: stats.month }, { k: 'Drafts (not issued)', v: stats.drafts }].map((s) => (
           <Card key={s.k} className="px-4 py-4 sm:px-5">
             <div className="text-2xl font-semibold tabular text-ink sm:text-3xl">{s.v}</div>
             <div className="mt-0.5 text-xs text-muted sm:text-[13px]">{s.k}</div>
@@ -91,7 +91,7 @@ function Dashboard() {
           <h2 className="mb-3 text-lg font-semibold">Drafts</h2>
           <Card>
             {drafts.length === 0 ? <EmptyState icon={<FilePlus2 className="size-7" />} title="No drafts" description="Use “Save as draft” in the editor to finish an invoice later." />
-              : <ul className="divide-y divide-line">{drafts.map((i) => <InvoiceListItem key={i.id} inv={i} compact />)}</ul>}
+              : <ul className="divide-y divide-line">{drafts.map((i) => <InvoiceListItem key={i.id} inv={i} compact actions={<Button size="sm" variant="primary" onClick={() => nav(`/edit/${i.id}`)}>Finish</Button>} />)}</ul>}
           </Card>
         </section>
       </div>

@@ -20,7 +20,7 @@ export function fastInvoice(r: unknown): Invoice | null {
 }
 
 export function fastPrefs(r: unknown): UserPreferences | null {
-  if (!obj(r) || r.schemaVersion !== SCHEMA_VERSION || typeof r.numberPrefix !== 'string' || typeof r.nextNumber !== 'number' || !obj(r.payment)) return null
+  if (!obj(r) || r.schemaVersion !== SCHEMA_VERSION || typeof r.numberPrefix !== 'string' || typeof r.nextNumber !== 'number' || !obj(r.payment) || !Array.isArray(r.paymentMethods) || typeof r.defaultFooter !== 'string') return null
   return r as unknown as UserPreferences
 }
 

@@ -129,6 +129,8 @@ export interface Invoice {
   accentColor?: string
   /** id of the business profile this invoice was created from */
   businessId?: string
+  /** id of the saved payment method used (if any) */
+  paymentMethodId?: string
   business: BusinessProfile
   customer: Customer
   items: InvoiceItem[]
@@ -198,7 +200,20 @@ export interface UserPreferences {
   dateFormat: DateFormat
   locale: string
   dueInDays: number
+  /** @deprecated legacy single payment block; migrated into paymentMethods */
   payment: Omit<PaymentDetails, 'visible' | 'instructions'>
+  /** Saved payment methods (single source of truth). The default fills every new invoice. */
+  paymentMethods: SavedPaymentMethod[]
+  defaultPaymentId?: string
+  defaultFooter: string
+  defaultThankYou: string
+  defaultTitle: string
+}
+
+export interface SavedPaymentMethod extends BusinessPayment {
+  id: string
+  /** short name shown in pickers, e.g. "HBL current account" */
+  label: string
 }
 
 export type TemplateCategory = 'General' | 'Industry' | 'Document'

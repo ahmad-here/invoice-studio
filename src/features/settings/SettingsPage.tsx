@@ -6,6 +6,7 @@ import { useApp, toast } from '@/app/store'
 import { Button, Card, ConfirmDialog, Input, PageHeader, Select, Textarea, Badge } from '@/components/common/ui'
 import { NumberInput } from '@/components/forms/inputs'
 import { Section } from '@/components/common/Section'
+import { PaymentMethods } from './PaymentMethods'
 import { Building2, ChevronRight as Chevron } from 'lucide-react'
 import { CURRENCIES, formatMoney } from '@/lib/money'
 import { formatDate, todayISO } from '@/lib/dates'
@@ -28,9 +29,13 @@ export default function SettingsPage() {
   const [confirmClear, setConfirmClear] = useState(false)
   const [importing, setImporting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  useEffect(() => { setP(app.prefs) }, [app.prefs])
+  // Payment methods save immediately; merge them in without discarding unsaved edits to other defaults
+  const lastSaved = useRef(app.prefs)
+  useEffect(() => {
+    setP((cur) => (JSON.stringify(cur) === JSON.stringify(lastSaved.current) ? app.prefs : { ...cur, paymentMethods: app.prefs.paymentMethods, defaultPaymentId: app.prefs.defaultPaymentId }))
+    lastSaved.current = app.prefs
+  }, [app.prefs])
   const dirty = JSON.stringify(p) !== JSON.stringify(app.prefs)
-  const setPay = (k: keyof UserPreferences['payment'], v: string) => setP({ ...p, payment: { ...p.payment, [k]: v } })
 
   const save = async () => {
     setSaving(true)
@@ -72,18 +77,7 @@ export default function SettingsPage() {
             <span className="min-w-0 flex-1"><span className="block text-[15px] font-semibold text-ink">My business</span><span className="block text-sm text-muted">Business details, logo and bank details used on your invoices</span></span>
             <Chevron className="size-5 text-muted" aria-hidden />
           </Link>
-          <Section title="Fallback payment details" description="Used only when a business has no payment details of its own (set those in My business).">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="Payment method" value={p.payment.method} onChange={(e) => setPay('method', e.target.value)} />
-              <Input label="Bank name" value={p.payment.bankName} onChange={(e) => setPay('bankName', e.target.value)} />
-              <Input label="Account holder" value={p.payment.accountHolder} onChange={(e) => setPay('accountHolder', e.target.value)} />
-              <Input label="Account number" value={p.payment.accountNumber} onChange={(e) => setPay('accountNumber', e.target.value)} />
-              <Input label="IBAN" value={p.payment.iban} onChange={(e) => setPay('iban', e.target.value.toUpperCase())} />
-              <Input label="SWIFT / BIC" value={p.payment.swift} onChange={(e) => setPay('swift', e.target.value.toUpperCase())} />
-              <Input label="Payment link" className="sm:col-span-2" value={p.payment.link} onChange={(e) => setPay('link', e.target.value)} />
-              <Textarea label="Payment instructions" className="sm:col-span-2" rows={2} value={p.defaultPaymentInstructions} onChange={(e) => setP({ ...p, defaultPaymentInstructions: e.target.value })} />
-            </div>
-          </Section>
+          <PaymentMethods />
         </div>
         <div className="space-y-6">
           <Section title="Invoice defaults">
@@ -110,6 +104,9 @@ export default function SettingsPage() {
               <Textarea label="Default payment terms" className="sm:col-span-2" rows={2} value={p.defaultPaymentTerms} onChange={(e) => setP({ ...p, defaultPaymentTerms: e.target.value })} />
               <Textarea label="Default invoice notes" className="sm:col-span-2" rows={2} value={p.defaultNotes} onChange={(e) => setP({ ...p, defaultNotes: e.target.value })} />
               <Textarea label="Default terms & conditions" className="sm:col-span-2" rows={2} value={p.defaultTerms} onChange={(e) => setP({ ...p, defaultTerms: e.target.value })} />
+              <Input label="Default document title" placeholder="Invoice" value={p.defaultTitle} maxLength={40} onChange={(e) => setP({ ...p, defaultTitle: e.target.value })} hint="e.g. Invoice, Tax Invoice" />
+              <Input label="Default thank-you message" value={p.defaultThankYou} maxLength={200} onChange={(e) => setP({ ...p, defaultThankYou: e.target.value })} />
+              <Textarea label="Default footer" className="sm:col-span-2" rows={2} value={p.defaultFooter} maxLength={1000} placeholder="e.g. Company reg. no. 12345 · www.yourcompany.com" onChange={(e) => setP({ ...p, defaultFooter: e.target.value })} hint="Printed at the bottom of every page." />
             </div>
           </Section>
           <Section title="Your data" description="Everything is stored locally in this browser on this device.">

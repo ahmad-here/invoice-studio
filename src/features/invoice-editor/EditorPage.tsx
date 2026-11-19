@@ -1,6 +1,8 @@
 import { useSeo } from '@/hooks/useSeo'
 import { completion } from '@/lib/completion'
-import { hasPaymentDetails, toBusinessPayment } from '@/lib/payment'
+import { toBusinessPayment } from '@/lib/payment'
+import { uid } from '@/lib/sanitize'
+import type { SavedPaymentMethod } from '@/types/invoice'
 import { ToolGuide } from '@/features/content/SeoSections'
 import { CircleCheck, FileDown, FolderOpen, Maximize2, Send } from 'lucide-react'
 import { clientToCustomer, customerToClient } from '@/lib/clients'
@@ -63,7 +65,7 @@ export default function EditorPage() {
   const nav = useNavigate()
   const [search] = useSearchParams()
   const templateParam = TEMPLATES.find((t) => t.id === search.get('template'))?.id
-  const { prefs, business, businesses, clients, invoices, saveInvoice, saveBusiness, saveClient, nextNumber } = useApp()
+  const { prefs, business, businesses, clients, invoices, saveInvoice, saveBusiness, saveClient, savePrefs, nextNumber } = useApp()
   const clientParam = search.get('client')
   const [inv, setInv] = useState<Invoice | null>(null)
   const [dirty, setDirty] = useState(false)
@@ -246,7 +248,7 @@ export default function EditorPage() {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h1 className="truncate text-xl font-semibold tracking-tight">{isSaved ? `Edit ${inv.number || 'invoice'}` : 'New invoice'}</h1>
-            {dirty ? <Badge tone="amber">Unsaved changes</Badge> : isSaved ? <Badge tone="green">Saved</Badge> : null}
+            {dirty ? <Badge tone="amber">Unsaved changes</Badge> : isSaved ? (inv.status === 'draft' ? <Badge tone="amber">Draft</Badge> : <Badge tone="green">Issued</Badge>) : null}
           </div>
           <p className="mt-0.5 text-sm text-muted">Total <span className="font-semibold text-ink tabular">{formatMoney(totals.grandTotal, inv.currency)}</span> · {tplName} · {inv.paperSize}</p>
         </div>
@@ -259,6 +261,15 @@ export default function EditorPage() {
         </div>
       </div>
 
+      {isSaved && inv.status === 'draft' && !dirty && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning-50 px-4 py-3">
+          <div className="min-w-0 text-sm">
+            <p className="font-semibold text-ink">This invoice is a draft</p>
+            <p className="text-muted">Drafts aren’t issued yet. When it’s ready, finalize it — it will be marked as issued (Unpaid) and count in your invoices.</p>
+          </div>
+          <Button variant="primary" icon={<CircleCheck className="size-4" />} onClick={() => save(false)} loading={saving}>Finalize invoice</Button>
+        </div>
+      )}
       {restored && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary-100 bg-primary-50 px-4 py-2.5 text-sm">
           <span className="text-primary-700">We restored your unsaved changes from last time.</span>
@@ -311,18 +322,20 @@ export default function EditorPage() {
               <ItemsSection inv={inv} update={update} totals={totals} defaultTax={prefs.defaultTaxRate} />
               <TotalsSection inv={inv} update={update} totals={totals} />
             </>}
-            {tab === 'payment' && (() => {
-              const prof = businesses.find((b) => b.id === inv.businessId)
-              const saved = prof && hasPaymentDetails(prof.payment) ? { ...prof.payment!, visible: true } : null
-              return <PaymentSection inv={inv} update={update} saved={saved && JSON.stringify(toBusinessPayment(inv.payment)) !== JSON.stringify(prof!.payment) ? saved : null}
-                onSaveDefault={async () => {
-                  const target = prof ?? (inv.business.name.trim() ? { ...inv.business, id: undefined } : null)
-                  if (!target) { toast.error('Add your business name first (From & To tab).'); return }
-                  const s = await saveBusiness({ ...target, payment: toBusinessPayment(inv.payment) })
-                  if (!prof) update({ businessId: s.id })
-                  toast.success(`Payment details saved for ${s.name}. New invoices will be filled in automatically.`)
-                }} />
-            })()}
+            {tab === 'payment' && <PaymentSection inv={inv} update={update} methods={prefs.paymentMethods}
+              onSaveNew={async () => {
+                const label = inv.payment.bankName || inv.payment.method || `Method ${prefs.paymentMethods.length + 1}`
+                const m: SavedPaymentMethod = { id: uid(), label, ...toBusinessPayment(inv.payment) }
+                const first = prefs.paymentMethods.length === 0
+                await savePrefs({ ...prefs, paymentMethods: [...prefs.paymentMethods, m], defaultPaymentId: first ? m.id : prefs.defaultPaymentId })
+                update({ paymentMethodId: m.id })
+                toast.success(first ? `Saved “${label}” as your default payment method.` : `Saved “${label}” to your payment methods.`)
+              }}
+              onUpdateSaved={async () => {
+                const id = inv.paymentMethodId
+                await savePrefs({ ...prefs, paymentMethods: prefs.paymentMethods.map((m) => (m.id === id ? { ...m, ...toBusinessPayment(inv.payment) } : m)) })
+                toast.success('Payment method updated.')
+              }} />}
             {tab === 'extras' && <>
               <CustomFieldsSection inv={inv} update={update} />
               <CustomSectionsSection inv={inv} update={update} />

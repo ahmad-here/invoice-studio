@@ -3,6 +3,7 @@ import { SCHEMA_VERSION, type Invoice, type UserPreferences, type BusinessProfil
 import { CURRENCY_CODES } from './money'
 import { createInvoice, defaultPreferences, emptyBusiness, emptyCustomer } from './defaults'
 import { LOGO_DATA_URL, uid } from './sanitize'
+import { hasPaymentDetails } from './payment'
 
 const str = (max = 5000) => z.string().max(max).catch('')
 const num = z.number().finite().catch(0)
@@ -43,6 +44,7 @@ export const invoiceSchema = z.object({
   paperSize: z.enum(['A4', 'Letter', 'Legal']).catch('A4'),
   accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().catch(undefined),
   businessId: z.string().max(100).optional().catch(undefined),
+  paymentMethodId: z.string().max(100).optional().catch(undefined),
   business: businessSchema.catch(emptyBusiness()),
   customer: z.object({
     name: str(300), company: str(300), email: str(300), phone: str(100), billingAddress: str(), shippingAddress: str(),
@@ -76,6 +78,12 @@ export const prefsSchema = z.object({
   dateFormat: z.enum(['locale', 'YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'D MMM YYYY']).catch('D MMM YYYY'),
   locale: str(20), dueInDays: z.number().int().min(0).max(365).catch(14),
   payment: z.object({ method: str(100), bankName: str(200), accountHolder: str(200), accountNumber: str(100), iban: str(100), swift: str(50), link: str(500) }),
+  paymentMethods: z.array(z.object({
+    id: z.string().min(1).catch(() => uid()), label: str(100), method: str(100), bankName: str(200), accountHolder: str(200), accountNumber: str(100),
+    iban: str(100), swift: str(50), instructions: str(), link: str(500),
+  })).max(50).catch([]),
+  defaultPaymentId: z.string().max(100).optional().catch(undefined),
+  defaultFooter: str(), defaultThankYou: str(500), defaultTitle: str(60),
 })
 
 /** Fill missing fields from a fresh default so older/partial records keep working (forward-compatible migration). */
@@ -90,8 +98,17 @@ export function migrateInvoice(raw: unknown): Invoice | null {
 
 export function migratePrefs(raw: unknown): UserPreferences {
   const base = defaultPreferences()
-  const r = prefsSchema.safeParse({ ...base, ...(raw && typeof raw === 'object' ? raw : {}) })
-  return r.success ? { ...(r.data as UserPreferences), schemaVersion: SCHEMA_VERSION } : base
+  const src = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const r = prefsSchema.safeParse({ ...base, ...src })
+  if (!r.success) return base
+  const p = { ...(r.data as UserPreferences), schemaVersion: SCHEMA_VERSION }
+  // Legacy single payment block → first saved payment method
+  if (!Array.isArray(src.paymentMethods) && hasPaymentDetails({ ...p.payment, instructions: p.defaultPaymentInstructions })) {
+    const id = uid()
+    p.paymentMethods = [{ id, label: p.payment.bankName || p.payment.method || 'Default', ...p.payment, instructions: p.defaultPaymentInstructions }]
+    p.defaultPaymentId = id
+  }
+  return p
 }
 
 export function migrateBusiness(raw: unknown): BusinessProfile {

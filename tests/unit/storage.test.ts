@@ -63,3 +63,16 @@ describe('storage (IndexedDB)', () => {
     expect((await storage.getEditorDraft('new'))?.number).toBe('N')
   })
 })
+
+describe('payment methods migration', () => {
+  it('turns legacy single payment details into the default saved method', () => {
+    const legacy = { ...defaultPreferences(), paymentMethods: undefined, payment: { method: 'Bank transfer', bankName: 'Habib Bank Limited', accountHolder: 'Ahmad', accountNumber: '345346356356', iban: '', swift: '', link: '' } }
+    const p = migratePrefs(legacy)
+    expect(p.paymentMethods).toHaveLength(1)
+    expect(p.paymentMethods[0]).toMatchObject({ label: 'Habib Bank Limited', accountNumber: '345346356356' })
+    expect(p.defaultPaymentId).toBe(p.paymentMethods[0].id)
+    const inv = createInvoice(p, emptyBusiness(), 'X')
+    expect(inv.payment).toMatchObject({ bankName: 'Habib Bank Limited', visible: true })
+    expect(inv.paymentMethodId).toBe(p.defaultPaymentId)
+  })
+})
