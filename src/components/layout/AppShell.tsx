@@ -10,9 +10,9 @@ import { Tour } from './Tour'
 /** Screen titles for the app bar. */
 const TITLES: [string, string][] = [
   ['/', 'Invoice Studio'], ['/create', 'New invoice'], ['/edit/:id', 'Edit invoice'], ['/templates', 'Templates'],
-  ['/bulk', 'Bulk generate'], ['/invoices', 'Invoices'], ['/settings', 'Settings'], ['/features', 'Features'],
+  ['/bulk', 'Bulk generate'], ['/invoices', 'Invoices'], ['/clients', 'Clients'], ['/settings', 'Settings'], ['/features', 'Features'],
   ['/how-to-use', 'How to use'], ['/faq', 'FAQ'], ['/support', 'Help & support'], ['/contact', 'Contact us'],
-  ['/privacy', 'Privacy policy'], ['/download', 'Get the app'],
+  ['/privacy', 'Privacy policy'], ['/terms', 'Terms of service'], ['/download', 'Get the app'],
 ]
 /** Top-level tabs show no back arrow. */
 const ROOTS = ['/', '/invoices', '/bulk', '/settings']

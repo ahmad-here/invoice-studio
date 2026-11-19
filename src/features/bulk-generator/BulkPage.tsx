@@ -13,6 +13,7 @@ import { formatMoney } from '@/lib/money'
 import { todayISO } from '@/lib/dates'
 import { TEMPLATES } from '@/templates/registry'
 import { APP_MODE } from '@/lib/appMode'
+import { ToolGuide } from '@/features/content/SeoSections'
 
 interface Parsed { name: string; text: string; result: BulkImportResult; headers: string[]; mapping: Record<string, string | null> }
 const PAGE = 50
@@ -27,7 +28,7 @@ function runWorker(name: string, text: string, ctx: ParseContext, mapping?: Reco
 }
 
 export default function BulkPage() {
-  useSeo({ title: 'Bulk Invoice Generator – Create Invoices from CSV or JSON', description: 'Generate hundreds of PDF invoices from one CSV or JSON file. Validation report, ZIP download and combined PDF. Free and private.', path: '/bulk' })
+  useSeo({ title: 'Bulk Invoice Generator – CSV & JSON to PDF Invoices', description: 'Free bulk invoice generator: turn a CSV or JSON file into hundreds of PDF invoices. Automatic grouping, validation report, ZIP and combined PDF download.', path: '/bulk' })
   const { prefs, business: defaultBusiness, businesses, invoices: saved, saveMany } = useApp()
   const [businessId, setBusinessId] = useState<string>(defaultBusiness.id ?? '')
   const business = businesses.find((b) => b.id === businessId) ?? defaultBusiness
@@ -371,6 +372,10 @@ export default function BulkPage() {
         </div>
       )}
 
+      {!parsed && <ToolGuide title="How the bulk invoice generator works" paragraphs={[
+        'Export your orders or billing data from Excel, Google Sheets or your shop as a CSV file — one row per line item. Rows that share an invoice number are combined into one invoice with several items.',
+        'Invoice Studio checks every row for missing fields, invalid dates, numbers and currencies, then generates every valid invoice. Download them individually, as one ZIP file, or as a single combined PDF — all processed privately on your device.',
+      ]} links={[['Download the sample CSV in step 1', '/bulk'], ['CSV format guide', '/how-to-use'], ['Invoice templates', '/templates']]} />}
       <Modal open={!!preview} onClose={() => setPreviewId(null)} title={preview ? `Invoice ${preview.number}` : ''} size="lg" footer={preview && <Button variant="primary" icon={<Download className="size-4" />} onClick={() => downloadOne(preview)}>Download PDF</Button>}>
         {preview && <div className="rounded-lg bg-[#eef1f5] p-3 sm:p-5"><ScaledPreview invoice={preview} prefs={prefs} /></div>}
       </Modal>

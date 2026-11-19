@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { BusinessProfile, Invoice, UserPreferences } from '@/types/invoice'
+import type { BusinessProfile, Client, Invoice, UserPreferences } from '@/types/invoice'
+import { normalizeClient } from '@/lib/clients'
 import { SCHEMA_VERSION } from '@/types/invoice'
 import type { BackupFile } from '@/lib/schema'
 import { fastInvoice, fastPrefs, fastBusiness } from '@/lib/fastMigrate'
@@ -75,6 +76,13 @@ export const storage = {
     if (migrated.length) await d.put('kv', migrated, 'businesses')
     return migrated
   },
+  async getClients(): Promise<Client[]> {
+    const raw = await (await db()).get('kv', KV.clients)
+    return Array.isArray(raw) ? raw.map(normalizeClient).filter((c): c is Client => !!c) : []
+  },
+  async saveClients(list: Client[]): Promise<void> {
+    await (await db()).put('kv', list, KV.clients)
+  },
   async saveBusinesses(list: BusinessProfile[]): Promise<void> {
     await (await db()).put('kv', list, 'businesses')
   },
@@ -97,6 +105,7 @@ export const storage = {
       preferences: await this.getPrefs(),
       business: businesses[0] ?? emptyBusiness(),
       businesses,
+      clients: await this.getClients(),
       invoices: await this.listInvoices(),
     }
   },
@@ -123,6 +132,12 @@ export const storage = {
       const legacy = migrateBusiness(b.business)
       const same = (x: BusinessProfile) => x.name === legacy.name && x.email === legacy.email && x.taxNumber === legacy.taxNumber
       if (!existing.some(same)) await this.saveBusinesses([...existing, { ...legacy, id: uid() }])
+    }
+    if (Array.isArray(b.clients)) {
+      const existing = await this.getClients()
+      const incoming = b.clients.map(normalizeClient).filter((c): c is Client => !!c)
+      const ids = new Set(incoming.map((c) => c.id))
+      await this.saveClients([...existing.filter((c) => !ids.has(c.id)), ...incoming])
     }
     // Preferences: imported values win, but the default business must point at a real profile
     const finalList = await this.getBusinesses()

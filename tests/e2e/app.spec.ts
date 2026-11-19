@@ -35,7 +35,7 @@ test.describe('app mode (Android / installed)', () => {
     await page.getByTestId('item-row').first().getByLabel('Item name').fill('Consulting')
     await page.getByTestId('item-row').first().getByLabel('Unit price').fill('99')
     await page.getByRole('button', { name: 'Save invoice' }).click()
-    await expect(page.getByText(/Invoice INV-0001 saved/)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Invoice INV-0001 saved' })).toBeVisible()
     await page.goto('/settings?app=1')
     await expect(page.getByRole('link', { name: 'Privacy policy' })).toBeVisible()
   })

@@ -1,6 +1,6 @@
 import { memo, useCallback, useRef, useState } from 'react'
 import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, Plus, Trash2, GripVertical, X, Check } from 'lucide-react'
-import type { BusinessProfile, CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals } from '@/types/invoice'
+import type { Client, BusinessProfile, CurrencyCode, CustomField, CustomFieldType, Customer, Invoice, InvoiceItem, InvoiceStatus, InvoiceTotals } from '@/types/invoice'
 import { Button, Input, Segmented, Select, Switch, Textarea, cx, Badge } from '@/components/common/ui'
 import { MoneyInput, NumberInput } from '@/components/forms/inputs'
 import { CURRENCIES, formatMoney, convertMinorPrecision, currencyDecimals } from '@/lib/money'
@@ -15,6 +15,8 @@ import { LogoEditor } from '@/components/forms/LogoEditor'
 
 export { Section, LogoEditor }
 import { sampleInvoice } from '@/lib/sample'
+import { clientToCustomer } from '@/lib/clients'
+import { completion } from '@/lib/completion'
 
 export type Update = (patch: Partial<Invoice> | ((inv: Invoice) => Partial<Invoice>)) => void
 interface P { inv: Invoice; update: Update }
@@ -31,7 +33,7 @@ const TERMS = [
 export const DetailsSection = memo(function DetailsSection({ inv, update, numberError }: P & { numberError?: string | null }) {
   const dateErr = inv.dueDate && inv.issueDate && inv.dueDate < inv.issueDate ? 'Due date is before the issue date' : null
   return (
-    <Section title="Invoice details" description="Number, dates and currency.">
+    <Section title="Invoice details" description="Number, dates and currency." complete={completion(inv).details}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Invoice number" required value={inv.number} maxLength={60} error={numberError ?? (!inv.number.trim() ? 'Invoice number is required' : null)} onChange={(e) => update({ number: e.target.value })} />
         <Input label="Document title" value={inv.title} maxLength={40} hint="e.g. Invoice, Tax Invoice, Proforma" onChange={(e) => update({ title: e.target.value })} />
@@ -76,7 +78,7 @@ export const BusinessSection = memo(function BusinessSection({ inv, update, prof
   const set = (k: keyof typeof b, v: string) => update((i) => ({ business: { ...i.business, [k]: v } }))
   const linked = profiles.find((x) => x.id === inv.businessId)
   return (
-    <Section title="From (your business)" description={profiles.length ? 'Choose a saved business or edit the details for this invoice only.' : 'Save these details as a business profile to reuse them.'} aside={
+    <Section title="From (your business)" complete={completion(inv).business} description={profiles.length ? 'Choose a saved business or edit the details for this invoice only.' : 'Save these details as a business profile to reuse them.'} aside={
       <div className="flex gap-1">
         {linked && <Button size="sm" variant="ghost" onClick={() => onSaveProfile(false)}>Update profile</Button>}
         <Button size="sm" variant="ghost" onClick={() => onSaveProfile(true)}>Save as new profile</Button>
@@ -114,14 +116,23 @@ const OPTIONAL_CUSTOMER: { k: CK; l: string; multiline?: boolean; type?: string 
   { k: 'billingAddress', l: 'Billing address', multiline: true }, { k: 'shippingAddress', l: 'Shipping address', multiline: true },
   { k: 'taxId', l: 'Tax ID' }, { k: 'reference', l: 'Customer reference' },
 ]
-export const CustomerSection = memo(function CustomerSection({ inv, update }: P) {
+export const CustomerSection = memo(function CustomerSection({ inv, update, clients = [], onSaveClient }: P & { clients?: Client[]; onSaveClient?: () => void }) {
   const c = inv.customer
   const set = (k: keyof Customer, v: unknown) => update((i) => ({ customer: { ...i.customer, [k]: v } }))
   const toggle = (k: CK) => set('hidden', c.hidden.includes(k) ? c.hidden.filter((x) => x !== k) : [...c.hidden, k])
   const visible = OPTIONAL_CUSTOMER.filter((f) => !c.hidden.includes(f.k))
   const hidden = OPTIONAL_CUSTOMER.filter((f) => c.hidden.includes(f.k))
   return (
-    <Section title="Bill to (customer)">
+    <Section title="Bill to (customer)" complete={completion(inv).customer} aside={onSaveClient && (c.name || c.company) ? <Button size="sm" variant="ghost" onClick={onSaveClient}>Save as client</Button> : undefined}>
+      {clients.length > 0 && (
+        <Select label="Saved client" className="mb-4" value="" onChange={(e) => {
+          const pick = clients.find((x) => x.id === e.target.value)
+          if (pick) update({ customer: clientToCustomer(pick) })
+        }}>
+          <option value="">Choose a saved client…</option>
+          {clients.map((x) => <option key={x.id} value={x.id}>{x.name || x.company}{x.name && x.company ? ` — ${x.company}` : ''}</option>)}
+        </Select>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Customer name" value={c.name} maxLength={200} className="sm:col-span-2" onChange={(e) => set('name', e.target.value)} />
         {visible.map((f) => {
@@ -214,7 +225,7 @@ export const ItemsSection = memo(function ItemsSection({ inv, update, totals, de
     else update((i) => ({ items: i.items.filter((_, k) => k !== idx) }))
   }, [update])
   return (
-    <Section title="Line items" description={`${inv.items.length} item${inv.items.length === 1 ? '' : 's'}`} aside={
+    <Section title="Line items" complete={completion(inv).items} description={`${inv.items.length} item${inv.items.length === 1 ? '' : 's'}`} aside={
       <Button size="sm" variant="primary" icon={<Plus className="size-4" />} onClick={() => update((i) => ({ items: [...i.items, newItem(defaultTax)] }))}>Add item</Button>
     }>
       <div className="space-y-3">
@@ -287,7 +298,7 @@ export const PaymentSection = memo(function PaymentSection({ inv, update }: P) {
   const p = inv.payment
   const set = (k: keyof typeof p, v: string | boolean) => update((i) => ({ payment: { ...i.payment, [k]: v } }))
   return (
-    <Section title="Payment information" aside={<Switch label="Show on invoice" checked={p.visible} onChange={(v) => set('visible', v)} />}>
+    <Section title="Payment information" complete={completion(inv).payment} aside={<Switch label="Show on invoice" checked={p.visible} onChange={(v) => set('visible', v)} />}>
       <div className={cx('grid gap-4 sm:grid-cols-2', !p.visible && 'opacity-60')}>
         <Input label="Payment method" value={p.method} maxLength={60} placeholder="Bank transfer" onChange={(e) => set('method', e.target.value)} />
         <Input label="Bank name" value={p.bankName} maxLength={100} onChange={(e) => set('bankName', e.target.value)} />

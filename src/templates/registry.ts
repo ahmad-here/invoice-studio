@@ -13,6 +13,7 @@ export const TEMPLATES: InvoiceTemplate[] = [
   { id: 'compact', name: 'Compact Invoice', description: 'Dense, space-efficient layout for long item lists.', bestFor: 'Wholesale, long invoices' },
   { id: 'service', name: 'Service Invoice', description: 'Project details up front; service descriptions take centre stage.', bestFor: 'Freelancers, contractors' },
   { id: 'retail', name: 'Retail Invoice', description: 'Product-focused table with SKU, discount and tax columns.', bestFor: 'Shops, e-commerce' },
+  { id: 'highlight', name: 'Highlight', description: 'Bold total-amount bar with soft card rows.', bestFor: 'Agencies, SaaS, modern brands' },
   { id: 'modern', name: 'Modern Business', description: 'Contemporary panels with a distinctive amount-due card.', bestFor: 'Startups, tech services' },
 ]
 
@@ -27,6 +28,7 @@ const loaders: Record<TemplateId, () => Promise<{ default: TemplateDef }>> = {
   service: () => import('./service'),
   retail: () => import('./retail'),
   modern: () => import('./modern'),
+  highlight: () => import('./highlight'),
 }
 
 const cache = new Map<TemplateId, TemplateDef>()

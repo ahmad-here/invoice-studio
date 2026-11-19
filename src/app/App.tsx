@@ -1,5 +1,6 @@
 import { lazy, useEffect } from 'react'
-import { BrowserRouter, Route, Routes, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Spinner } from '@/components/common/ui'
 import { useApp } from './store'
@@ -17,6 +18,9 @@ const Support = lazy(() => import('@/features/content/SupportPage'))
 const Contact = lazy(() => import('@/features/content/ContactPage'))
 const Privacy = lazy(() => import('@/features/content/PrivacyPage'))
 const DownloadApp = lazy(() => import('@/features/content/DownloadPage'))
+const Clients = lazy(() => import('@/features/clients/ClientsPage'))
+const Terms = lazy(() => import('@/features/content/TermsPage'))
+const NotFound = lazy(() => import('@/features/content/NotFoundPage'))
 
 /** A fresh editor per URL: unsaved work is flushed on unmount into the right draft slot. */
 function EditorRoute() {
@@ -34,6 +38,7 @@ export function App() {
   useEffect(() => { redirectHash(); init() }, [init])
   if (!loaded) return <Spinner label="Opening Invoice Studio" />
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       {error && <div role="alert" className="bg-danger-50 px-4 py-2 text-center text-sm text-danger">{error}</div>}
       <Routes>
@@ -44,6 +49,7 @@ export function App() {
           <Route path="templates" element={<Templates />} />
           <Route path="bulk" element={<Bulk />} />
           <Route path="invoices" element={<Saved />} />
+          <Route path="clients" element={<Clients />} />
           <Route path="settings" element={<Settings />} />
           <Route path="features" element={<Features />} />
           <Route path="how-to-use" element={<HowTo />} />
@@ -52,9 +58,12 @@ export function App() {
           <Route path="contact" element={<Contact />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="download" element={<DownloadApp />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="404" element={<NotFound />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>
+    </ErrorBoundary>
   )
 }

@@ -1,6 +1,6 @@
 # Invoice Studio
 
-A free, private, offline-capable invoice generator: 10 professional templates, live A4/Letter/Legal preview, PDF download, direct printing, bulk generation from CSV/JSON (ZIP or combined PDF), multiple business profiles, and an Android app — with no account and no server. All data stays in the browser (IndexedDB) on the user's device.
+A free, private, offline-capable invoice generator: 11 professional templates, live A4/Letter/Legal preview, PDF download, direct printing, bulk generation from CSV/JSON (ZIP or combined PDF), multiple business profiles, and an Android app — with no account and no server. All data stays in the browser (IndexedDB) on the user's device.
 
 ## Quick start
 
@@ -88,7 +88,7 @@ src/
   app/            App shell, routes, zustand store (prefs, business profiles, invoices, toasts)
   components/     common UI primitives, layout (header, nav, footer, tour), invoice document renderer
   features/       dashboard, invoice-editor, invoice-templates, bulk-generator, saved-invoices, settings, content (SEO pages)
-  templates/      10 templates sharing one data model + shared building blocks; lazily loaded
+  templates/      11 templates sharing one data model + shared building blocks; lazily loaded
   services/       storage (IndexedDB), pdf (html-to-image + jsPDF), printing, bulk (CSV/JSON parse + Web Worker), files (web download / Android share)
   lib/            money (integer minor units), calc (totals), dates, schema (zod, lazy), fastMigrate, sanitize, image (logo processing)
   types/          shared TypeScript data model (schema-versioned)

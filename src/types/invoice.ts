@@ -11,7 +11,7 @@ export type TaxMode = 'item' | 'invoice'
 export type LogoPosition = 'left' | 'center' | 'right'
 export type TemplateId =
   | 'classic' | 'minimal' | 'corporate' | 'executive' | 'creative'
-  | 'elegant' | 'compact' | 'service' | 'retail' | 'modern'
+  | 'elegant' | 'compact' | 'service' | 'retail' | 'modern' | 'highlight'
 
 export interface Discount {
   type: DiscountType
@@ -53,6 +53,14 @@ export interface Customer {
   reference: string
   /** names of fields the user chose to hide */
   hidden: (keyof Omit<Customer, 'hidden'>)[]
+}
+
+/** A saved customer that can be reused across invoices. */
+export interface Client extends Omit<Customer, 'hidden'> {
+  id: string
+  notes: string
+  createdAt: number
+  updatedAt: number
 }
 
 export interface InvoiceItem {

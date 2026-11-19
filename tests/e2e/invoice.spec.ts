@@ -4,7 +4,7 @@ import { fillBasicInvoice, pdfPageCount, readDownload } from './helpers'
 test.describe('invoice studio', () => {
   test('dashboard shows empty state and CTAs', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'Professional invoices in minutes.' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Free invoice generator/ })).toBeVisible()
     await expect(page.getByText('No invoices yet')).toBeVisible()
     await page.getByRole('button', { name: 'Create invoice' }).first().click()
     await expect(page).toHaveURL(/\/create/)
@@ -61,6 +61,7 @@ test.describe('invoice studio', () => {
     await fillBasicInvoice(page, { customer: 'Saved Customer' })
     await page.getByRole('button', { name: 'Save invoice' }).first().click()
     await expect(page).toHaveURL(/\/edit\//)
+    await page.getByRole('button', { name: 'Keep editing' }).click()
     await page.getByRole('tab', { name: 'From & To' }).click()
     await page.getByLabel('Customer name').fill('Edited But Unsaved')
     await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Create' }).click()
@@ -163,7 +164,7 @@ test.describe('invoice studio', () => {
     await page.goto('/create')
     await fillBasicInvoice(page)
     await page.getByRole('tab', { name: 'Design' }).click()
-    const names = ['Classic Professional', 'Modern Minimal', 'Corporate Blue', 'Executive', 'Creative Studio', 'Elegant Dark Accent', 'Compact Invoice', 'Service Invoice', 'Retail Invoice', 'Modern Business']
+    const names = ['Classic Professional', 'Modern Minimal', 'Corporate Blue', 'Executive', 'Creative Studio', 'Elegant Dark Accent', 'Compact Invoice', 'Service Invoice', 'Retail Invoice', 'Highlight', 'Modern Business']
     for (const name of names) {
       await page.getByRole('button', { name, exact: false }).filter({ hasText: name }).first().click()
       await expect(page.getByText(new RegExp(`· ${name} ·`))).toBeVisible()
@@ -187,7 +188,7 @@ test.describe('invoice studio', () => {
     await page.goto('/create')
     await fillBasicInvoice(page)
     await page.evaluate(() => { (window as unknown as { __printed: number }).__printed = 0; window.print = () => { (window as unknown as { __printed: number }).__printed++ } })
-    await page.getByRole('button', { name: 'Print' }).click()
+    await page.getByRole('button', { name: 'Print', exact: true }).click()
     await expect.poll(() => page.evaluate(() => (window as unknown as { __printed: number }).__printed)).toBe(1)
     await expect(page.locator('#print-root .invoice-page')).toHaveCount(1)
     await page.emulateMedia({ media: 'print' })

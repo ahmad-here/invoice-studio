@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react'
 import type { Invoice } from '@/types/invoice'
 import { toast, useApp } from '@/app/store'
-import { saveFile } from '@/services/files'
+import { isNative, saveFile } from '@/services/files'
+import { calculateTotals } from '@/lib/calc'
+import { formatMoney } from '@/lib/money'
 import { uid } from '@/lib/sanitize'
 import { shiftDueDate, todayISO } from '@/lib/dates'
 
@@ -35,7 +37,34 @@ export function useInvoiceActions() {
     }
   }, [prefs])
 
-  return { busy, downloadPdf, print }
+  /** Share the PDF: native/Web Share sheet with the file, else download it and open an email draft. */
+  const share = useCallback(async (inv: Invoice) => {
+    setBusy(`share:${inv.id}`)
+    try {
+      const { invoiceToPdfBlob } = await import('@/services/pdf/pdf')
+      const blob = await invoiceToPdfBlob(inv, prefs)
+      const name = `Invoice-${inv.number || 'draft'}.pdf`
+      const total = formatMoney(calculateTotals(inv).balanceDue, inv.currency)
+      const text = `Invoice ${inv.number} from ${inv.business.name || 'us'} — ${total} due${inv.dueDate ? ` by ${inv.dueDate}` : ''}.`
+      if (isNative()) { await saveFile(blob, name); return }
+      const file = new File([blob], name, { type: 'application/pdf' })
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Invoice ${inv.number}`, text }).catch((e) => { if ((e as Error).name !== 'AbortError') throw e })
+        return
+      }
+      await saveFile(blob, name)
+      if (inv.customer.email) {
+        window.location.href = `mailto:${encodeURIComponent(inv.customer.email)}?subject=${encodeURIComponent(`Invoice ${inv.number}`)}&body=${encodeURIComponent(`${text}\n\nPlease find the invoice attached.`)}`
+        toast.info('PDF downloaded — attach it to the email that just opened.')
+      } else toast.info('PDF downloaded. Add a customer email to send it by email next time.')
+    } catch (e) {
+      toast.error(`Could not share: ${(e as Error).message}`)
+    } finally {
+      setBusy(null)
+    }
+  }, [prefs])
+
+  return { busy, downloadPdf, print, share }
 }
 
 export function duplicateInvoice(inv: Invoice, number: string): Invoice {

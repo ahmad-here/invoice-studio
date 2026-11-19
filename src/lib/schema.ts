@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SCHEMA_VERSION, type Invoice, type UserPreferences, type BusinessProfile } from '@/types/invoice'
+import { SCHEMA_VERSION, type Invoice, type UserPreferences, type BusinessProfile, type Client } from '@/types/invoice'
 import { CURRENCY_CODES } from './money'
 import { createInvoice, defaultPreferences, emptyBusiness, emptyCustomer } from './defaults'
 import { LOGO_DATA_URL, uid } from './sanitize'
@@ -7,7 +7,7 @@ import { LOGO_DATA_URL, uid } from './sanitize'
 const str = (max = 5000) => z.string().max(max).catch('')
 const num = z.number().finite().catch(0)
 const bool = (d: boolean) => z.boolean().catch(d)
-const TEMPLATE_IDS = ['classic', 'minimal', 'corporate', 'executive', 'creative', 'elegant', 'compact', 'service', 'retail', 'modern'] as const
+const TEMPLATE_IDS = ['classic', 'minimal', 'corporate', 'executive', 'creative', 'elegant', 'compact', 'service', 'retail', 'modern', 'highlight'] as const
 
 const discount = z.object({ type: z.enum(['percent', 'fixed']).catch('percent'), value: num }).catch({ type: 'percent', value: 0 })
 const textSection = z.object({ text: str(), visible: bool(false) }).catch({ text: '', visible: false })
@@ -105,5 +105,6 @@ export interface BackupFile {
   preferences: UserPreferences
   business: BusinessProfile
   businesses?: BusinessProfile[]
+  clients?: Client[]
   invoices: Invoice[]
 }

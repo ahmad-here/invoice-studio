@@ -12,7 +12,7 @@ interface Step { target?: string; title: string; body: string }
 const STEPS: Step[] = [
   { title: 'Welcome to Invoice Studio', body: 'Create professional invoices in minutes — free, private and with no sign-up. Here’s a one-minute tour of the essentials.' },
   { target: 'nav-create', title: 'Create an invoice', body: 'Fill in customer, items, tax and payment details step by step while a live A4 preview updates beside you. Unsaved work is autosaved.' },
-  { target: 'nav-templates', title: '10 professional templates', body: 'Preview every design and switch at any time — your invoice data stays exactly the same.' },
+  { target: 'nav-templates', title: '11 professional templates', body: 'Preview every design and switch at any time — your invoice data stays exactly the same.' },
   { target: 'nav-bulk', title: 'Bulk generate', body: 'Upload a CSV or JSON file to create hundreds of invoices at once, then download them as a ZIP or one combined PDF.' },
   { target: 'nav-invoices', title: 'Saved invoices', body: 'Search, filter, duplicate, re-download or print anything you’ve saved.' },
   { target: 'nav-settings', title: 'Businesses & defaults', body: 'Add one or more business profiles with logos, then set your currency, tax, numbering and template defaults. Back up your data here too.' },

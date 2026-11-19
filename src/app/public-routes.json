@@ -7,6 +7,7 @@
     "/support",
     "/contact",
     "/privacy",
+    "/terms",
     "/download",
     "/templates",
     "/bulk"
@@ -15,6 +16,8 @@
     "/create"
   ],
   "disallow": [
+    "/404",
+    "/clients",
     "/edit/",
     "/invoices",
     "/settings"

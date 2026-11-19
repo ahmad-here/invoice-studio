@@ -1,13 +1,17 @@
 import { useSeo } from '@/hooks/useSeo'
+import { completion } from '@/lib/completion'
+import { ToolGuide } from '@/features/content/SeoSections'
+import { CircleCheck, FileDown, FolderOpen, Maximize2, Send } from 'lucide-react'
+import { clientToCustomer, customerToClient } from '@/lib/clients'
 import { APP_MODE } from '@/lib/appMode'
 import { useAppBarActions } from '@/app/appBar'
 import { AppBarIcon } from '@/components/layout/AppBarIcon'
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Download, Eye, FilePlus2, Pencil, Printer, Save, RotateCcw } from 'lucide-react'
 import type { Invoice } from '@/types/invoice'
 import { useApp, toast } from '@/app/store'
-import { Badge, Button, ConfirmDialog, Segmented, Spinner, cx } from '@/components/common/ui'
+import { Badge, Button, ConfirmDialog, Modal, Segmented, Spinner, cx } from '@/components/common/ui'
 import { ScaledPreview } from '@/components/invoice/ScaledPreview'
 import { calculateTotals } from '@/lib/calc'
 import { createInvoice } from '@/lib/defaults'
@@ -53,12 +57,13 @@ function validate(inv: Invoice, duplicate: boolean): string[] {
 }
 
 export default function EditorPage() {
-  useSeo({ title: 'Create an Invoice Online – Free Invoice Maker', description: 'Fill in your invoice with a live preview, then download a PDF or print. Free, private and no sign-up.', path: '/create' })
+  useSeo({ title: 'Online Invoice Maker – Create a Free Invoice in Minutes', description: 'Make an invoice online for free: add your logo, client, items, GST/VAT tax and discounts with a live preview, then download a PDF, print or share. No sign-up.', path: '/create' })
   const { id } = useParams()
   const nav = useNavigate()
   const [search] = useSearchParams()
   const templateParam = TEMPLATES.find((t) => t.id === search.get('template'))?.id
-  const { prefs, business, businesses, invoices, saveInvoice, saveBusiness, nextNumber } = useApp()
+  const { prefs, business, businesses, clients, invoices, saveInvoice, saveBusiness, saveClient, nextNumber } = useApp()
+  const clientParam = search.get('client')
   const [inv, setInv] = useState<Invoice | null>(null)
   const [dirty, setDirty] = useState(false)
   const [restored, setRestored] = useState(false)
@@ -74,7 +79,15 @@ export default function EditorPage() {
   const [errors, setErrors] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [confirmNew, setConfirmNew] = useState(false)
-  const { busy, downloadPdf, print } = useInvoiceActions()
+  const { busy, downloadPdf, print, share } = useInvoiceActions()
+  const [zoom, setZoom] = useState(1)
+  const location = useLocation()
+  const [nextSteps, setNextSteps] = useState<boolean>(() => !!(location.state as { justSaved?: boolean } | null)?.justSaved)
+  // One-shot: clear the flag from history so Back/refresh never re-opens the "saved" panel
+  useEffect(() => {
+    if ((location.state as { justSaved?: boolean } | null)?.justSaved) nav(location.pathname + location.search, { replace: true, state: null })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const invId = inv?.id
   const isSaved = useMemo(() => !!invId && invoices.some((i) => i.id === invId), [invId, invoices])
   const draftKey = id ?? 'new'
@@ -98,11 +111,13 @@ export default function EditorPage() {
         next = createInvoice(prefs, business, nextNumber())
       }
       if (templateParam && !id) next = { ...next, template: templateParam, accentColor: undefined }
+      const pickedClient = !id && clientParam ? useApp.getState().clients.find((c) => c.id === clientParam) : undefined
+      if (pickedClient && !fromDraft) next = { ...next, customer: clientToCustomer(pickedClient) }
       if (live) { setInv(next); setDirty(fromDraft); setRestored(fromDraft); setErrors([]) }
     })()
     return () => { live = false }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, templateParam])
+  }, [id, templateParam, clientParam])
 
   const update: Update = useCallback((patch) => {
     setInv((cur) => (cur ? { ...cur, ...(typeof patch === 'function' ? patch(cur) : patch), updatedAt: Date.now() } : cur))
@@ -157,7 +172,7 @@ export default function EditorPage() {
 
   if (!inv || !totals || !deferred) return <Spinner label="Loading invoice" />
 
-  const save = async (asDraft: boolean) => {
+  const save = async (asDraft: boolean, thenShare = false) => {
     const problems = validate(inv, duplicateNumber)
     const blocking = asDraft ? problems.filter((p) => p.startsWith('Invoice number')) : problems
     setErrors(blocking)
@@ -173,7 +188,9 @@ export default function EditorPage() {
       setDirty(false)
       setRestored(false)
       toast.success(asDraft ? 'Draft saved.' : `Invoice ${toSave.number} saved.`)
-      if (!id) nav(`/edit/${saved.id}`, { replace: true })
+      if (thenShare) share(saved)
+      if (!asDraft && !thenShare) setNextSteps(true)
+      if (!id) nav(`/edit/${saved.id}`, { replace: true, state: { justSaved: !asDraft && !thenShare } })
     } catch (e) {
       toast.error(`Could not save: ${(e as Error).message}`)
     } finally {
@@ -210,6 +227,7 @@ export default function EditorPage() {
   }
 
   const tplName = TEMPLATES.find((t) => t.id === inv.template)?.name
+  const done = completion(inv)
   appActions.current = { print: () => print(inv), pdf: () => downloadPdf(inv), fresh: () => (dirty ? setConfirmNew(true) : startNew()) }
   const onTabKey = (e: React.KeyboardEvent) => {
     const i = TABS.findIndex((t) => t.id === tab)
@@ -268,7 +286,7 @@ export default function EditorPage() {
               return (
                 <button key={t.id} role="tab" aria-selected={tab === t.id} tabIndex={tab === t.id ? 0 : -1} aria-controls={`panel-${t.id}`} id={`tab-${t.id}`} onClick={(e) => { setTab(t.id); e.currentTarget.scrollIntoView({ inline: 'nearest', block: 'nearest' }) }}
                   className={cx('flex shrink-0 snap-start items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors sm:px-3.5 sm:text-sm', tab === t.id ? 'bg-primary text-white shadow-xs' : 'text-muted hover:bg-canvas hover:text-ink')}>
-                  {t.label}{hasErr && <span className="size-1.5 rounded-full bg-danger" aria-label="has errors" />}
+                  {t.label}{hasErr ? <span className="size-1.5 rounded-full bg-danger" aria-label="has errors" /> : done[t.id as keyof typeof done] ? <CircleCheck className={cx('size-3.5', tab === t.id ? 'text-white' : 'text-success')} aria-label="completed" /> : null}
                 </button>
               )
             })}
@@ -276,7 +294,11 @@ export default function EditorPage() {
           <div key={tab} role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className={cx('space-y-4', slide && `tab-slide-${slide}`)}>
             {tab === 'details' && <DetailsSection inv={inv} update={update} numberError={duplicateNumber ? 'This number is already used by a saved invoice' : null} />}
             {tab === 'parties' && <>
-              <CustomerSection inv={inv} update={update} />
+              <CustomerSection inv={inv} update={update} clients={clients} onSaveClient={async () => {
+                const existing = clients.find((x) => (inv.customer.email && x.email.toLowerCase() === inv.customer.email.toLowerCase()) || (x.name === inv.customer.name && x.company === inv.customer.company))
+                const saved = await saveClient(customerToClient(inv.customer, existing))
+                toast.success(existing ? `Updated client “${saved.name || saved.company}”.` : `Saved “${saved.name || saved.company}” to clients.`)
+              }} />
               <BusinessSection inv={inv} update={update} profiles={businesses} onSaveProfile={async (asNew) => {
                 if (!inv.business.name.trim()) { toast.error('Enter a business name first.'); return }
                 const saved = await saveBusiness(asNew ? { ...inv.business, id: undefined } : { ...inv.business, id: inv.businessId })
@@ -313,8 +335,25 @@ export default function EditorPage() {
 
         <div className={cx('min-w-0', mobileView === 'edit' && 'hidden lg:block')}>
           <div className="lg:sticky lg:top-20">
-            <div className="rounded-xl border border-line bg-[#eef1f5] p-3 sm:p-5 lg:max-h-[calc(100dvh-6.5rem)] lg:overflow-y-auto scrollbar-thin" aria-label="Invoice preview">
-              <ScaledPreview invoice={deferred} prefs={prefs} pageGap={20} />
+            <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-xs">
+              <div className="flex items-center gap-3 border-b border-line px-4 py-2.5">
+                <span className="text-sm font-semibold text-ink">Preview</span>
+                <label className="ml-auto flex items-center gap-2 text-xs text-muted">
+                  <span className="sr-only">Zoom</span>
+                  <input type="range" min={50} max={200} step={10} value={Math.round(zoom * 100)} onChange={(e) => setZoom(Number(e.target.value) / 100)} className="w-24 accent-[var(--color-primary)] sm:w-32" aria-label="Zoom" />
+                  <span className="w-9 tabular">{Math.round(zoom * 100)}%</span>
+                </label>
+                <Button size="icon" variant="ghost" aria-label="Fit to width" title="Fit to width" onClick={() => setZoom(1)}><Maximize2 className="size-4" /></Button>
+                <Button size="icon" variant="ghost" aria-label="Download PDF preview" title="Download PDF" onClick={() => downloadPdf(inv)}><FileDown className="size-4" /></Button>
+                <Button size="icon" variant="ghost" aria-label="Print preview" title="Print" onClick={() => print(inv)}><Printer className="size-4" /></Button>
+              </div>
+              <div className="bg-[#eef1f5] p-3 sm:p-5 lg:max-h-[calc(100dvh-10rem)] lg:overflow-y-auto scrollbar-thin" aria-label="Invoice preview">
+                <ScaledPreview invoice={deferred} prefs={prefs} pageGap={20} zoom={zoom} />
+              </div>
+              <div className="hidden items-center justify-end gap-2 border-t border-line px-4 py-3 lg:flex">
+                <Button onClick={() => save(true)} loading={saving}>Save as draft</Button>
+                <Button variant="primary" icon={<Send className="size-4" />} onClick={() => save(false, true)} loading={saving || busy === `share:${inv.id}`}>Save & share</Button>
+              </div>
             </div>
           </div>
         </div>
@@ -327,6 +366,24 @@ export default function EditorPage() {
         <Button variant="primary" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving}>Save invoice</Button>
       </div>
 
+      {!id && <ToolGuide title="Create a professional invoice online" paragraphs={[
+        'Fill in your business and client details, add line items with quantities, prices, discounts and tax, and watch the invoice update live. Totals, tax and balance due are calculated automatically and accurately.',
+        'When you’re done, download the invoice as a PDF, print it, or share it by email. Save it to edit, duplicate or resend later — everything stays on your device.',
+      ]} links={[['Browse invoice templates', '/templates'], ['How to use', '/how-to-use'], ['FAQ', '/faq']]} />}
+      <Modal open={nextSteps} onClose={() => setNextSteps(false)} title={`Invoice ${inv.number} saved`} size="sm">
+        <div className="mb-4 flex items-center gap-3 rounded-xl bg-success-50 p-3">
+          <CircleCheck className="size-6 shrink-0 text-success" aria-hidden />
+          <div className="min-w-0 text-sm"><div className="font-semibold text-ink">{inv.customer.name || inv.customer.company || 'Invoice'} · {formatMoney(totals.grandTotal, inv.currency)}</div><div className="text-muted">What would you like to do next?</div></div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button className="justify-center" icon={<Download className="size-4" />} loading={busy === `pdf:${inv.id}`} onClick={() => downloadPdf(inv)} data-autofocus>Download PDF</Button>
+          <Button className="justify-center" icon={<Send className="size-4" />} loading={busy === `share:${inv.id}`} onClick={() => share(inv)}>Share / email</Button>
+          <Button className="justify-center" icon={<Printer className="size-4" />} onClick={() => { setNextSteps(false); print(inv) }}>Print</Button>
+          <Button className="justify-center" icon={<FolderOpen className="size-4" />} onClick={() => nav('/invoices')}>All invoices</Button>
+        </div>
+        <Button variant="primary" className="mt-3 w-full justify-center" icon={<FilePlus2 className="size-4" />} onClick={() => { setNextSteps(false); nav('/create') }}>Create another invoice</Button>
+        <button type="button" className="mt-2 w-full py-2 text-sm font-medium text-muted hover:text-ink" onClick={() => setNextSteps(false)}>Keep editing</button>
+      </Modal>
       <ConfirmDialog open={confirmNew} title="Start a new invoice?" confirmLabel="Discard changes"
         message={`Your unsaved changes to ${inv.number || 'this invoice'} will be lost.`} onCancel={() => setConfirmNew(false)} onConfirm={startNew} />
     </div>

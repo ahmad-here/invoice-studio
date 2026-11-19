@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { BusinessProfile, Invoice, UserPreferences } from '@/types/invoice'
+import type { BusinessProfile, Client, Invoice, UserPreferences } from '@/types/invoice'
 import { defaultPreferences, emptyBusiness, formatInvoiceNumber } from '@/lib/defaults'
 import { storage } from '@/services/storage/db'
 import { uid } from '@/lib/sanitize'
@@ -13,6 +13,7 @@ interface AppState {
   /** the default business profile (used for new invoices) */
   business: BusinessProfile
   businesses: BusinessProfile[]
+  clients: Client[]
   invoices: Invoice[]
   init: () => Promise<void>
   reload: () => Promise<void>
@@ -25,6 +26,8 @@ interface AppState {
   saveBusiness: (b: BusinessProfile, makeDefault?: boolean) => Promise<BusinessProfile>
   deleteBusiness: (id: string) => Promise<void>
   setDefaultBusiness: (id: string) => Promise<void>
+  saveClient: (c: Client) => Promise<Client>
+  deleteClient: (id: string) => Promise<void>
   /** Reserve the next default invoice number (only advances when the number was used). */
   nextNumber: () => string
 }
@@ -42,19 +45,20 @@ export const useApp = create<AppState>((set, get) => ({
   prefs: defaultPreferences(),
   business: emptyBusiness(),
   businesses: [],
+  clients: [],
   invoices: [],
   async init() {
     if (get().loaded) return
     try {
-      const [prefs, businesses, invoices] = await Promise.all([storage.getPrefs(), storage.getBusinesses(), storage.listInvoices()])
-      set({ prefs, businesses, business: pickDefault(businesses, prefs.defaultBusinessId), invoices, loaded: true })
+      const [prefs, businesses, invoices, clients] = await Promise.all([storage.getPrefs(), storage.getBusinesses(), storage.listInvoices(), storage.getClients()])
+      set({ prefs, businesses, clients, business: pickDefault(businesses, prefs.defaultBusinessId), invoices, loaded: true })
     } catch (e) {
       set({ loaded: true, error: `Local storage is unavailable: ${(e as Error).message}. Your work cannot be saved in this browser mode (e.g. private browsing).` })
     }
   },
   async reload() {
-    const [prefs, businesses, invoices] = await Promise.all([storage.getPrefs(), storage.getBusinesses(), storage.listInvoices()])
-    set({ prefs, businesses, business: pickDefault(businesses, prefs.defaultBusinessId), invoices })
+    const [prefs, businesses, invoices, clients] = await Promise.all([storage.getPrefs(), storage.getBusinesses(), storage.listInvoices(), storage.getClients()])
+    set({ prefs, businesses, clients, business: pickDefault(businesses, prefs.defaultBusinessId), invoices })
   },
   async saveInvoice(inv) {
     const saved = { ...inv, updatedAt: Date.now() }
@@ -97,6 +101,18 @@ export const useApp = create<AppState>((set, get) => ({
     const defId = prefs.defaultBusinessId === id ? list[0]?.id : prefs.defaultBusinessId
     if (defId !== prefs.defaultBusinessId) await storage.savePrefs({ ...prefs, defaultBusinessId: defId })
     set({ businesses: list, prefs: { ...prefs, defaultBusinessId: defId }, business: pickDefault(list, defId) })
+  },
+  async saveClient(c) {
+    const saved = { ...c, updatedAt: Date.now() }
+    const list = [saved, ...get().clients.filter((x) => x.id !== c.id)].sort((a, b) => (a.name || a.company).localeCompare(b.name || b.company))
+    await storage.saveClients(list)
+    set({ clients: list })
+    return saved
+  },
+  async deleteClient(id) {
+    const list = get().clients.filter((x) => x.id !== id)
+    await storage.saveClients(list)
+    set({ clients: list })
   },
   async setDefaultBusiness(id) {
     const { prefs, businesses } = get()

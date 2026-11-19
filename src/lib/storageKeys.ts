@@ -3,6 +3,7 @@ export const KV = {
   prefs: 'prefs',
   businesses: 'businesses',
   legacyBusiness: 'business',
+  clients: 'clients',
   editorDraft: (key: string) => `editorDraft:${key}`,
 } as const
 

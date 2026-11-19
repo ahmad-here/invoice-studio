@@ -9,9 +9,10 @@ import { TEMPLATES } from '@/templates/registry'
 import { TemplateThumb } from '@/components/invoice/TemplateThumb'
 import { ScaledPreview } from '@/components/invoice/ScaledPreview'
 import { sampleInvoice } from '@/lib/sample'
+import { ToolGuide } from '@/features/content/SeoSections'
 
 export default function TemplatesPage() {
-  useSeo({ title: '10 Free Invoice Templates – Professional PDF Designs', description: 'Browse 10 professional invoice templates: classic, minimal, corporate, executive, creative, compact, service, retail and more. Free PDF download.', path: '/templates' })
+  useSeo({ title: '11 Free Invoice Templates – Download as PDF', description: 'Free professional invoice templates: classic, modern, minimal, corporate, service, retail and more. Customise with your logo and download as PDF — no sign-up.', path: '/templates' })
   const { prefs, savePrefs } = useApp()
   const nav = useNavigate()
   const [params, setParams] = useSearchParams()
@@ -27,7 +28,7 @@ export default function TemplatesPage() {
 
   return (
     <div>
-      <PageHeader title="Invoice templates" description="Ten distinct, print-ready designs. Every template supports your logo, custom fields, multiple pages and all currencies." />
+      <PageHeader title="Invoice templates" description="Eleven distinct, print-ready designs. Every template supports your logo, custom fields, multiple pages and all currencies." />
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {TEMPLATES.map((t) => (
           <div key={t.id} className="flex flex-col overflow-hidden rounded-xl border border-line bg-white shadow-xs">
@@ -54,6 +55,10 @@ export default function TemplatesPage() {
           <div className="rounded-lg bg-[#eef1f5] p-3 sm:p-5"><ScaledPreview invoice={samples[current.id]} prefs={prefs} /></div>
         </>}
       </Modal>
+      <ToolGuide title="Free invoice templates you can customise" paragraphs={[
+        'Every invoice template uses the same data, so you can switch designs at any time without retyping. Add your logo, choose an accent colour and paper size (A4, Letter or Legal), then download a print-ready PDF invoice.',
+        'Pick Classic Professional or Corporate Blue for formal business invoices, Service Invoice for freelancers and consultants, Retail Invoice for products with SKUs, or Compact for long item lists.',
+      ]} links={[['Create an invoice', '/create'], ['Bulk generate invoices', '/bulk'], ['All features', '/features']]} />
     </div>
   )
 }

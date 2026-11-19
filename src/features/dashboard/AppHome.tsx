@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Building2, ChevronRight, FilePlus2, FileText, Layers, LayoutTemplate, Clock, CircleCheck, AlertCircle } from 'lucide-react'
+import { Users, ChevronRight, FilePlus2, FileText, Layers, LayoutTemplate, Clock, CircleCheck, AlertCircle } from 'lucide-react'
 import { useApp } from '@/app/store'
 import { Card, EmptyState, Button } from '@/components/common/ui'
 import { InvoiceListItem } from '@/components/invoice/InvoiceListItem'
@@ -35,8 +35,8 @@ export function AppHome() {
   const quick = [
     { to: '/create', label: 'New invoice', icon: FilePlus2, tone: 'bg-primary text-white' },
     { to: '/bulk', label: 'Bulk generate', icon: Layers, tone: 'bg-primary-50 text-primary-700' },
+    { to: '/clients', label: 'Clients', icon: Users, tone: 'bg-primary-50 text-primary-700' },
     { to: '/templates', label: 'Templates', icon: LayoutTemplate, tone: 'bg-primary-50 text-primary-700' },
-    { to: '/settings', label: 'Businesses', icon: Building2, tone: 'bg-primary-50 text-primary-700' },
   ]
 
   return (

@@ -8,7 +8,7 @@ import { isNative } from '@/services/files'
 
 /** Android APK + PWA install instructions. Checks the APK actually exists before offering it. */
 export default function DownloadPage() {
-  useSeo({ title: 'Download the Invoice Generator App for Android', description: 'Get the free Invoice Studio app for Android (APK) or install it on any phone or computer from your browser. Works offline.', path: '/download' })
+  useSeo({ title: 'Invoice Generator App for Android – Free APK Download', description: 'Get the free Invoice Studio app for Android (APK) or install it on any phone or computer from your browser. Works offline.', path: '/download' })
   const [apk, setApk] = useState<'checking' | 'yes' | 'no'>('checking')
   useEffect(() => {
     let live = true

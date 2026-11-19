@@ -134,7 +134,7 @@ export default function SettingsPage() {
           <h2 className="mb-2 px-1 text-[13px] font-semibold uppercase tracking-wide text-muted">Help & about</h2>
           <Card>
             <ul className="divide-y divide-line">
-              {([['How to use', '/how-to-use'], ['FAQ', '/faq'], ['Help & support', '/support'], ['Contact us', '/contact'], ['Privacy policy', '/privacy']] as const).map(([l, to]) => (
+              {([['How to use', '/how-to-use'], ['FAQ', '/faq'], ['Help & support', '/support'], ['Contact us', '/contact'], ['Privacy policy', '/privacy'], ['Terms of service', '/terms']] as const).map(([l, to]) => (
                 <li key={to}><Link to={to} className="flex min-h-12 items-center justify-between px-4 text-[15px] text-ink active:bg-canvas">{l}<ChevronRight className="size-5 text-muted" /></Link></li>
               ))}
               <li><button type="button" onClick={() => startTour()} className="flex min-h-12 w-full items-center justify-between px-4 text-left text-[15px] text-ink active:bg-canvas">Replay product tour<ChevronRight className="size-5 text-muted" /></button></li>

@@ -34,6 +34,11 @@ for (const route of ROUTES) {
   writeFileSync(join(dir, 'index.html'), html)
   console.log('prerendered', route)
 }
+// Static 404 page for hosts that serve /404.html with a real 404 status
+await page.goto(`${base}/404`, { waitUntil: 'networkidle' })
+await page.waitForSelector('main h1', { timeout: 15000 })
+writeFileSync('dist/404.html', '<!doctype html>\n' + (await page.evaluate(() => document.documentElement.outerHTML)))
+console.log('prerendered 404.html')
 } finally {
   await browser.close()
   await new Promise((r) => server.httpServer.close(r))
