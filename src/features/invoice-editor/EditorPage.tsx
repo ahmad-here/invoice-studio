@@ -231,6 +231,8 @@ export default function EditorPage() {
 
   const tplName = TEMPLATES.find((t) => t.id === inv.template)?.name
   const done = completion(inv)
+  /** The one primary action: issuing a new/draft invoice, or saving changes to an issued one. */
+  const primaryLabel = isSaved && inv.status !== 'draft' ? 'Save changes' : 'Create invoice'
   appActions.current = { print: () => print(inv), pdf: () => downloadPdf(inv), fresh: () => (dirty ? setConfirmNew(true) : startNew()) }
   const onTabKey = (e: React.KeyboardEvent) => {
     const i = TABS.findIndex((t) => t.id === tab)
@@ -256,8 +258,8 @@ export default function EditorPage() {
           <Button size="md" variant="ghost" icon={<FilePlus2 className="size-4" />} onClick={() => (dirty ? setConfirmNew(true) : startNew())}>New</Button>
           <Button icon={<Printer className="size-4" />} loading={busy === `print:${inv.id}`} onClick={() => print(inv)} aria-label="Print">Print</Button>
           <Button icon={<Download className="size-4" />} loading={busy === `pdf:${inv.id}`} onClick={() => downloadPdf(inv)} aria-label="Download PDF">PDF</Button>
-          <Button onClick={() => save(true)} loading={saving} title="Save without validation to finish later" className="hidden lg:inline-flex">Save as draft</Button>
-          <Button variant="primary" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving} className="hidden lg:inline-flex">Save invoice</Button>
+          <Button variant="ghost" onClick={() => save(true)} loading={saving} title="Save without issuing — finish later" className="hidden text-muted lg:inline-flex">Save as draft</Button>
+          <Button variant="primary" size="lg" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving} className="hidden lg:inline-flex">{primaryLabel}</Button>
         </div>
       </div>
 
@@ -265,9 +267,9 @@ export default function EditorPage() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning-50 px-4 py-3">
           <div className="min-w-0 text-sm">
             <p className="font-semibold text-ink">This invoice is a draft</p>
-            <p className="text-muted">Drafts aren’t issued yet. When it’s ready, finalize it — it will be marked as issued (Unpaid) and count in your invoices.</p>
+            <p className="text-muted">Drafts aren’t issued yet. When it’s ready, click Create invoice — it will be issued (Unpaid) and count in your invoices.</p>
           </div>
-          <Button variant="primary" icon={<CircleCheck className="size-4" />} onClick={() => save(false)} loading={saving}>Finalize invoice</Button>
+          <Button variant="primary" icon={<CircleCheck className="size-4" />} onClick={() => save(false)} loading={saving}>Create invoice</Button>
         </div>
       )}
       {restored && (
@@ -354,7 +356,7 @@ export default function EditorPage() {
                     el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
                   }
                 }}>Next: {TABS[TABS.findIndex((t) => t.id === tab) + 1].label}</Button>
-              : <Button variant="primary" onClick={() => save(false)} loading={saving}>Save invoice</Button>}
+              : <Button variant="primary" onClick={() => save(false)} loading={saving}>{primaryLabel}</Button>}
           </div>
         </div>
 
@@ -376,8 +378,9 @@ export default function EditorPage() {
                 <ScaledPreview invoice={deferred} prefs={prefs} pageGap={20} zoom={zoom} />
               </div>
               <div className="hidden items-center justify-end gap-2 border-t border-line px-4 py-3 lg:flex">
-                <Button onClick={() => save(true)} loading={saving}>Save as draft</Button>
-                <Button variant="primary" icon={<Send className="size-4" />} onClick={() => save(false, true)} loading={saving || busy === `share:${inv.id}`}>Save & share</Button>
+                <Button variant="ghost" className="mr-auto text-muted" onClick={() => save(true)} loading={saving}>Save as draft</Button>
+                <Button icon={<Send className="size-4" />} onClick={() => save(false, true)} loading={saving || busy === `share:${inv.id}`}>{isSaved && inv.status !== 'draft' ? 'Save & share' : 'Create & share'}</Button>
+                <Button variant="primary" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving}>{primaryLabel}</Button>
               </div>
             </div>
           </div>
@@ -387,8 +390,8 @@ export default function EditorPage() {
       {/* Mobile sticky action bar: total + primary save always reachable */}
       <div className="editor-actionbar fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t border-line bg-white px-4 py-2 shadow-[0_-4px_12px_rgb(16_24_40/0.06)] lg:hidden">
         <div className="min-w-0 flex-1"><div className="text-[11px] text-muted">Total{dirty && <span className="text-warning"> · Unsaved</span>}</div><div className="truncate text-[15px] font-semibold tabular">{formatMoney(totals.grandTotal, inv.currency)}</div></div>
-        <Button variant="ghost" size="sm" onClick={() => save(true)} loading={saving}>Draft</Button>
-        <Button variant="primary" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving}>Save invoice</Button>
+        <Button variant="ghost" size="sm" className="text-muted" onClick={() => save(true)} loading={saving}>Draft</Button>
+        <Button variant="primary" icon={<Save className="size-4" />} onClick={() => save(false)} loading={saving}>{primaryLabel}</Button>
       </div>
 
       {!id && <ToolGuide title="Create a professional invoice online" paragraphs={[

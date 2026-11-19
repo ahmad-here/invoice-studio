@@ -444,6 +444,7 @@ const thumbFor = (id: Invoice['template']) => {
 
 export const DesignSection = memo(function DesignSection({ inv, update }: P) {
   const [cat, setCat] = useState<'All' | 'General' | 'Industry' | 'Document'>('All')
+  const [showAll, setShowAll] = useState(false)
   return (
     <Section title="Template & layout" description="Switch templates at any time — your data stays the same.">
       {(() => {
@@ -462,7 +463,13 @@ export const DesignSection = memo(function DesignSection({ inv, update }: P) {
         ))}
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {TEMPLATES.filter((t) => cat === 'All' || t.category === cat).map((t) => {
+        {(() => {
+          const all = TEMPLATES.filter((t) => cat === 'All' || t.category === cat)
+          if (showAll || all.length <= 6) return all
+          const first = all.slice(0, 5)
+          const cur = all.find((t) => t.id === inv.template)
+          return cur && !first.includes(cur) ? [...first.slice(0, 4), cur] : first
+        })().map((t) => {
           const active = inv.template === t.id
           return (
             <button key={t.id} type="button" aria-pressed={active} onClick={() => update({ template: t.id, accentColor: undefined })}
@@ -475,7 +482,24 @@ export const DesignSection = memo(function DesignSection({ inv, update }: P) {
             </button>
           )
         })}
+        {(() => {
+          const all = TEMPLATES.filter((t) => cat === 'All' || t.category === cat)
+          if (showAll || all.length <= 6) return null
+          const more = all.length - 5
+          const peek = all.find((t, i) => i >= 5 && t.id !== inv.template) ?? all[5]
+          return (
+            <button type="button" onClick={() => setShowAll(true)} className="group relative overflow-hidden rounded-lg border-2 border-line text-left hover:border-primary" aria-label={`Show ${more} more templates`}>
+              <div className="relative border-b border-line bg-canvas"><TemplateThumb invoice={thumbFor(peek.id)} />
+                <span className="absolute inset-0 flex flex-col items-center justify-center bg-ink/70 text-white transition-colors group-hover:bg-ink/80">
+                  <span className="text-3xl font-bold">+{more}</span><span className="text-sm font-medium">more templates</span>
+                </span>
+              </div>
+              <div className="px-2.5 py-2"><div className="truncate text-[13px] font-medium text-primary">Show all</div></div>
+            </button>
+          )
+        })()}
       </div>
+      {showAll && <button type="button" className="mt-2 text-[13px] font-medium text-primary hover:text-primary-700" onClick={() => setShowAll(false)}>Show fewer</button>}
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div>
           <span className="mb-1.5 block text-[13px] font-medium">Paper size</span>

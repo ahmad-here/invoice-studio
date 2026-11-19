@@ -24,7 +24,7 @@ test.describe('invoice studio', () => {
     await expect(preview).toContainText('Acme Corporation')
     await expect(preview).toContainText('$2,931.10')
 
-    await page.getByRole('button', { name: 'Save invoice' }).first().click()
+    await page.getByRole('button', { name: /^(Create invoice|Save changes)$/ }).first().click()
     await expect(page.getByText('Invoice INV-0001 saved.')).toBeVisible()
     await expect(page).toHaveURL(/\/edit\//)
 
@@ -41,7 +41,7 @@ test.describe('invoice studio', () => {
 
   test('validation blocks saving incomplete invoices and duplicate numbers', async ({ page }) => {
     await page.goto('/create')
-    await page.getByRole('button', { name: 'Save invoice' }).first().click()
+    await page.getByRole('button', { name: /^(Create invoice|Save changes)$/ }).first().click()
     await expect(page.getByRole('alert').filter({ hasText: 'Please fix' })).toContainText('Add a customer name')
   })
 
@@ -59,7 +59,7 @@ test.describe('invoice studio', () => {
   test('drafts stay separate when switching between a saved invoice and a new one', async ({ page }) => {
     await page.goto('/create')
     await fillBasicInvoice(page, { customer: 'Saved Customer' })
-    await page.getByRole('button', { name: 'Save invoice' }).first().click()
+    await page.getByRole('button', { name: /^(Create invoice|Save changes)$/ }).first().click()
     await expect(page).toHaveURL(/\/edit\//)
     await page.getByRole('button', { name: 'Keep editing' }).click()
     await page.getByRole('tab', { name: 'From & To' }).click()
@@ -164,6 +164,7 @@ test.describe('invoice studio', () => {
     await page.goto('/create')
     await fillBasicInvoice(page)
     await page.getByRole('tab', { name: 'Design' }).click()
+    await page.getByRole('button', { name: /more templates/ }).click()
     const names = ['Classic Professional', 'Modern Minimal', 'Corporate Blue', 'Executive', 'Creative Studio', 'Elegant Dark Accent', 'Compact Invoice', 'Service Invoice', 'Retail Invoice', 'Highlight', 'Modern Business', 'Construction / Contractor', 'Hourly Timesheet', 'Proforma Invoice', 'Tax Invoice (GST/VAT)', 'Commercial Invoice (Export)', 'Credit Note', 'Payment Receipt', 'Medical / Healthcare', 'Hotel Guest Folio', 'Home Services / Cleaning']
     for (const name of names) {
       await page.getByRole('button', { name, exact: false }).filter({ hasText: name }).first().click()
