@@ -5,7 +5,7 @@
 export const SITE = {
   name: 'Invoice Studio',
   url: (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') || 'https://invoicestudio.app',
-  supportEmail: (import.meta.env.VITE_SUPPORT_EMAIL as string | undefined) || 'support@invoicestudio.app',
+  supportEmail: (import.meta.env.VITE_SUPPORT_EMAIL as string | undefined) || 'ahmaddot909@gmail.com',
   /** Where the Android APK is served from (place the built file in public/downloads/). */
   apkUrl: (import.meta.env.VITE_APK_URL as string | undefined) || '/downloads/invoice-studio.apk',
   lastUpdated: '17 November 2026',

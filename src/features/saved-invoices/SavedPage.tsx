@@ -1,7 +1,7 @@
 import { useSeo } from '@/hooks/useSeo'
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Copy, Download, FileText, MoreHorizontal, Printer, Search, Trash2 } from 'lucide-react'
+import { Copy, Download, X, FileText, MoreHorizontal, Printer, Search, Trash2 } from 'lucide-react'
 import type { Invoice, InvoiceStatus } from '@/types/invoice'
 import { useApp, toast } from '@/app/store'
 import { Button, Card, ConfirmDialog, EmptyState, Input, PageHeader, Select } from '@/components/common/ui'
@@ -10,6 +10,8 @@ import { APP_MODE } from '@/lib/appMode'
 import { useInvoiceActions, duplicateInvoice } from '@/hooks/useInvoiceActions'
 import { isOverdue } from '@/lib/dates'
 import { calculateTotals } from '@/lib/calc'
+import { saveFile } from '@/services/files'
+import { todayISO } from '@/lib/dates'
 
 type Sort = 'issue-desc' | 'issue-asc' | 'due-asc' | 'amount-desc' | 'updated-desc'
 const PAGE = 50
@@ -26,6 +28,10 @@ export default function SavedPage() {
   const [toDelete, setToDelete] = useState<Invoice | null>(null)
   const [menu, setMenu] = useState<string | null>(null)
   const { busy, downloadPdf, print } = useInvoiceActions()
+  const prefs = useApp((s) => s.prefs)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState<string | null>(null)
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
   const dq = useDeferredValue(q.trim().toLowerCase())
   // Close the mobile action menu on outside tap or Escape
   useEffect(() => {
@@ -56,6 +62,43 @@ export default function SavedPage() {
     return filtered.sort(cmp[sort])
   }, [invoices, dq, status, sort])
 
+  // Drop selections that no longer exist (deleted elsewhere)
+  useEffect(() => { setSelected((sel) => { const ids = new Set(invoices.map((i) => i.id)); const next = new Set([...sel].filter((id) => ids.has(id))); return next.size === sel.size ? sel : next }) }, [invoices])
+  const chosen = useMemo(() => list.filter((i) => selected.has(i.id)), [list, selected])
+  const allSelected = list.length > 0 && list.every((i) => selected.has(i.id))
+  const toggle = (id: string) => setSelected((sel) => { const n = new Set(sel); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(list.map((i) => i.id)))
+
+  const runBulk = async (key: string, fn: () => Promise<void>) => {
+    setBulkBusy(key)
+    try { await fn() } catch (e) { toast.error(`Could not finish: ${(e as Error).message}`) } finally { setBulkBusy(null) }
+  }
+  const bulkDownload = () => runBulk('zip', async () => {
+    const [{ default: JSZip }, { invoiceToPdfBlob, yieldToBrowser }] = await Promise.all([import('jszip'), import('@/services/pdf/pdf')])
+    if (chosen.length === 1) { await downloadPdf(chosen[0]); return }
+    const zip = new JSZip(); const used = new Set<string>()
+    for (const inv of chosen) {
+      let name = `Invoice-${inv.number || 'draft'}`, n = 2
+      while (used.has(name)) name = `Invoice-${inv.number || 'draft'}-${n++}`
+      used.add(name)
+      zip.file(`${name}.pdf`, await invoiceToPdfBlob(inv, prefs))
+      await yieldToBrowser()
+    }
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' })
+    if (await saveFile(blob, `Invoices-${todayISO()}.zip`)) toast.success(`${chosen.length} invoices downloaded as ZIP.`)
+  })
+  const bulkPrint = () => runBulk('print', async () => {
+    const { printInvoices } = await import('@/services/printing/print')
+    await printInvoices(chosen, prefs)
+  })
+  const bulkDelete = async () => {
+    const items = chosen
+    setConfirmBulkDelete(false)
+    for (const inv of items) await deleteInvoice(inv.id)
+    setSelected(new Set())
+    toast.success(`${items.length} invoice${items.length === 1 ? '' : 's'} deleted.`)
+  }
+
   const duplicate = async (inv: Invoice) => {
     const copy = duplicateInvoice(inv, nextNumber())
     await saveInvoice(copy)
@@ -65,7 +108,7 @@ export default function SavedPage() {
 
   return (
     <div>
-      <PageHeader title="Saved invoices" description="Stored privately in this browser on this device. Use Settings → Backup to move them to another device." actions={<Button variant="primary" className="app-hide" onClick={() => nav('/create')}>Create invoice</Button>} />
+      <PageHeader title="Saved invoices" description="Stored privately in this browser on this device. Use Settings → Backup to move them to another device." />
       {APP_MODE ? (
         <div className="mb-4 space-y-3">
           <div className="flex gap-2">
@@ -101,10 +144,23 @@ export default function SavedPage() {
           <div className="px-5 py-12 text-center text-sm text-muted">No invoices match your search. <button className="font-medium text-primary" onClick={() => { setQ(''); setStatus('all') }}>Clear filters</button></div>
         ) : (
           <>
-            <div className="border-b border-line px-5 py-2 text-xs text-muted">{list.length} invoice{list.length === 1 ? '' : 's'}</div>
+            <div className={`sticky z-20 flex ${APP_MODE ? 'top-[calc(3.5rem+env(safe-area-inset-top))]' : 'top-16'} ${chosen.length ? 'shadow-sm' : ''} min-h-11 flex-wrap items-center gap-x-3 gap-y-2 rounded-t-xl border-b border-line px-4 py-2 sm:px-5 ${chosen.length ? 'bg-primary-50' : 'bg-white'}`}>
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
+                <input type="checkbox" className="size-4 accent-[var(--color-primary)]" checked={allSelected} ref={(el) => { if (el) el.indeterminate = chosen.length > 0 && !allSelected }} onChange={toggleAll} aria-label={allSelected ? 'Unselect all invoices' : 'Select all invoices'} />
+                {chosen.length ? <span className="font-medium text-ink">{chosen.length} selected</span> : <span>{list.length} invoice{list.length === 1 ? '' : 's'}</span>}
+              </label>
+              {chosen.length > 0 && (
+                <div className="ml-auto flex flex-wrap items-center gap-1.5" role="toolbar" aria-label="Bulk actions">
+                  <Button size="sm" icon={<Download className="size-4" />} loading={bulkBusy === 'zip'} disabled={!!bulkBusy} onClick={bulkDownload}>Download{chosen.length > 1 ? ' ZIP' : ''}</Button>
+                  <Button size="sm" icon={<Printer className="size-4" />} loading={bulkBusy === 'print'} disabled={!!bulkBusy} onClick={bulkPrint}>Print</Button>
+                  <Button size="sm" variant="danger-ghost" icon={<Trash2 className="size-4" />} disabled={!!bulkBusy} onClick={() => setConfirmBulkDelete(true)}>Delete</Button>
+                  <Button size="icon" variant="ghost" aria-label="Clear selection" onClick={() => setSelected(new Set())}><X className="size-4" /></Button>
+                </div>
+              )}
+            </div>
             <ul className="divide-y divide-line">
               {list.slice(0, limit).map((inv) => (
-                <InvoiceListItem key={inv.id} inv={inv} actions={
+                <InvoiceListItem key={inv.id} inv={inv} selected={selected.has(inv.id)} leading={<input type="checkbox" className="size-4 shrink-0 cursor-pointer accent-[var(--color-primary)]" checked={selected.has(inv.id)} onChange={() => toggle(inv.id)} aria-label={`Select ${inv.number || 'invoice'}`} />} actions={
                   <div className="relative flex shrink-0 items-center">
                     <div className="hidden md:flex">
                       <Button size="icon" variant="ghost" aria-label={`Download ${inv.number} as PDF`} loading={busy === `pdf:${inv.id}`} onClick={() => downloadPdf(inv)}>{busy !== `pdf:${inv.id}` && <Download className="size-4" />}</Button>
@@ -135,6 +191,8 @@ export default function SavedPage() {
           </>
         )}
       </Card>
+      <ConfirmDialog open={confirmBulkDelete} title={`Delete ${chosen.length} invoice${chosen.length === 1 ? '' : 's'}?`} message={<>{chosen.slice(0, 5).map((i) => i.number).join(', ')}{chosen.length > 5 ? ` and ${chosen.length - 5} more` : ''} will be permanently removed from this device. This can’t be undone.</>}
+        onCancel={() => setConfirmBulkDelete(false)} onConfirm={bulkDelete} />
       <ConfirmDialog open={!!toDelete} title="Delete invoice?" message={<>Invoice <b className="text-ink">{toDelete?.number}</b> will be permanently removed from this device. This can’t be undone.</>}
         onCancel={() => setToDelete(null)} onConfirm={async () => { if (toDelete) { await deleteInvoice(toDelete.id); toast.success(`Invoice ${toDelete.number} deleted.`) } setToDelete(null) }} />
     </div>

@@ -49,6 +49,9 @@ export default function TemplatesPage() {
               <div className="text-sm font-semibold text-ink">{t.name}</div>
               <p className="mt-0.5 flex-1 text-xs text-muted">{t.description}</p>
               <Button size="sm" variant="secondary" className="mt-3 w-full justify-center" onClick={() => applyTemplate(t.id)}>Use template</Button>
+              {prefs.defaultTemplate === t.id
+                ? <div className="mt-1.5 flex h-8 items-center justify-center gap-1 text-xs font-medium text-primary"><Check className="size-3.5" />Your default</div>
+                : <Button size="sm" variant="ghost" className="mt-1.5 w-full justify-center text-muted" onClick={() => setDefault(t.id)} aria-label={`Set ${t.name} as default template`}>Set as default</Button>}
             </div>
           </div>
         ))}

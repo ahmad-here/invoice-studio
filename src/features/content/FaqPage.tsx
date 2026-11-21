@@ -1,5 +1,6 @@
 import { ContentLayout } from './ContentLayout'
 import { useSeo } from '@/hooks/useSeo'
+import { isNative } from '@/services/files'
 
 export const FAQS: { q: string; a: string }[] = [
   { q: 'Is Invoice Studio really free?', a: 'Yes. Creating, printing, downloading and bulk generating invoices is free, with no sign-up and no watermark.' },
@@ -13,10 +14,10 @@ export const FAQS: { q: string; a: string }[] = [
   { q: 'Which currencies are supported?', a: 'USD, EUR, GBP, PKR, AED, SAR, INR, CAD, AUD and JPY. The currency controls formatting only; no exchange-rate conversion is applied.' },
   { q: 'How are taxes and discounts calculated?', a: 'Per-item discounts are applied first, then any invoice discount (before tax), then tax per item or a single invoice rate — never both. Amounts are calculated in whole cents to avoid rounding errors.' },
   { q: 'Which paper sizes can I print or download?', a: 'A4 (default), US Letter and Legal. Long invoices continue onto extra pages with the table header repeated.' },
-  { q: 'Is there an Android app?', a: 'Yes. You can install the web app from Chrome (menu → Install app / Add to Home screen), or download the Android APK from the Download page when it is available.' },
+  { q: 'Is there an Android app?', a: isNative() ? 'Yes, you are using it. The same app also runs in any browser and can be installed from Chrome (menu → Install app).' : 'Yes. You can install the web app from Chrome (menu → Install app / Add to Home screen), or download the Android APK from the Download page when it is available.' },
   { q: 'Can I add my logo?', a: 'Yes. Upload a PNG, JPG, SVG or WebP up to 2 MB, then adjust its size and position (left, center or right). It appears in previews, PDFs and printouts.' },
   { q: 'Can I create GST or VAT invoices?', a: 'Yes. Add your tax or VAT registration number to your business profile, set a tax rate per item or for the whole invoice, and use a title such as “Tax Invoice”. Check local requirements for the exact wording your country needs.' },
-  { q: 'Can I make an invoice on my phone?', a: 'Yes. The invoice generator works on any phone browser, can be installed as an app, and is available as an Android APK. Your invoices are saved on the device.' },
+  { q: 'Can I make an invoice on my phone?', a: 'Yes. The invoice generator works on any phone browser, can be installed as an app, and is available as an Android app. Your invoices are saved on the device.' },
   { q: 'Is there a watermark on the PDF invoices?', a: 'No. Every PDF invoice is clean and professional, with your own logo and business details only.' },
   { q: 'Can I save my clients?', a: 'Yes. Save clients once in the Clients page (or from the invoice editor) and pick them on any new invoice.' },
   { q: 'What if I clear my browser data?', a: 'Clearing site data deletes your locally stored invoices. Export a backup regularly if your invoices are important to you.' },

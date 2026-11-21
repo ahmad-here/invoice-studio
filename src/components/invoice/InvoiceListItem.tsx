@@ -13,11 +13,12 @@ export function StatusBadge({ inv }: { inv: Invoice }) {
   return { draft: <Badge>Draft</Badge>, sent: <Badge tone="blue">Unpaid</Badge>, paid: <Badge tone="green">Paid</Badge>, overdue: <Badge tone="red">Overdue</Badge>, cancelled: <Badge tone="amber">Cancelled</Badge> }[inv.status]
 }
 
-export const InvoiceListItem = memo(function InvoiceListItem({ inv, compact, actions }: { inv: Invoice; compact?: boolean; actions?: React.ReactNode }) {
+export const InvoiceListItem = memo(function InvoiceListItem({ inv, compact, actions, leading, selected }: { inv: Invoice; compact?: boolean; actions?: React.ReactNode; leading?: React.ReactNode; selected?: boolean }) {
   const prefs = useApp((s) => s.prefs)
   const total = calculateTotals(inv)
   return (
-    <li className="flex items-center gap-3 px-4 py-3 sm:px-5 hover:bg-canvas/60">
+    <li className={`flex items-center gap-3 px-4 py-3 sm:px-5 ${selected ? 'bg-primary-50' : 'hover:bg-canvas/60'}`}>
+      {leading}
       <Link to={`/edit/${inv.id}`} className="flex min-w-0 flex-1 items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

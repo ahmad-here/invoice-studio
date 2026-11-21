@@ -124,6 +124,21 @@ test.describe('invoice studio', () => {
     await page.getByRole('tab', { name: 'From & To' }).click()
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="80"><rect width="200" height="80" fill="#0692F4"/><script>alert(1)</script></svg>'
     await page.getByLabel('Upload logo').setInputFiles({ name: 'logo.svg', mimeType: 'image/svg+xml', buffer: Buffer.from(svg) })
+    // position it in the cropper: drag, zoom, rotate, save
+    const crop = page.getByRole('dialog', { name: 'Position your logo' })
+    await expect(crop).toBeVisible()
+    const frame = crop.getByTestId('logo-crop-frame')
+    const b = (await frame.boundingBox())!
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down(); await page.mouse.move(b.x + b.width / 2 + 30, b.y + b.height / 2 + 10); await page.mouse.up()
+    await crop.getByLabel('Zoom', { exact: true }).fill('1.5')
+    await crop.getByRole('button', { name: 'Rotate 90°' }).click()
+    await crop.getByRole('button', { name: 'Save logo' }).click()
+    await expect(crop).toHaveCount(0)
+    await expect(page.getByAltText('Logo preview')).toBeVisible()
+    await expect(page.getByLabel(/^Size/)).toHaveCount(0)
+    // can re-open to adjust, cancel keeps the logo
+    await page.getByRole('button', { name: 'Adjust' }).click()
+    await page.getByRole('dialog', { name: 'Position your logo' }).getByRole('button', { name: 'Cancel' }).click()
     await expect(page.getByAltText('Logo preview')).toBeVisible()
     const src = await page.getByAltText('Logo preview').getAttribute('src')
     expect(src).toMatch(/^data:image\/png;base64,/)

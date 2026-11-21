@@ -11,3 +11,7 @@ apk-build.log
 android/local.properties
 android/app/release/
 keystore.properties
+.scratch/
+
+# Marketing assets (kept local)
+marketing/

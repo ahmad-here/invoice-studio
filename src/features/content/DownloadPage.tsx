@@ -11,6 +11,8 @@ export default function DownloadPage() {
   useSeo({ title: 'Invoice Generator App for Android – Free APK Download', description: 'Get the free Invoice Studio app for Android (APK) or install it on any phone or computer from your browser. Works offline.', path: '/download' })
   const [apk, setApk] = useState<'checking' | 'yes' | 'no'>('checking')
   useEffect(() => {
+    // Inside the store-installed app there is nothing to download: never probe for or offer the APK.
+    if (isNative()) return
     let live = true
     fetch(SITE.apkUrl, { method: 'HEAD' })
       .then((r) => live && setApk(r.ok && !(r.headers.get('content-type') ?? '').includes('text/html') ? 'yes' : 'no'))
