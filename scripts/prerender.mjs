@@ -4,6 +4,7 @@ import { chromium } from '@playwright/test'
 import { preview } from 'vite'
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { execSync } from 'node:child_process'
 
 const SITE_URL = (process.env.VITE_SITE_URL || 'https://invoicestudio.app').replace(/\/$/, '')
 import { readFileSync } from 'node:fs'
@@ -14,10 +15,24 @@ const SITEMAP = [...ROUTES, ...PUBLIC.sitemapOnly]
 // Keep the untouched SPA shell for app routes (/create, /edit/*, /invoices, /settings) and offline fallback
 copyFileSync('dist/index.html', 'dist/app.html')
 
-const server = await preview({ preview: { port: 0 }, logLevel: 'silent' })
-const base = server.resolvedUrls.local[0].replace(/\/$/, '')
-const browser = await chromium.launch()
-try {
+// CI/deploy hosts often have no Playwright browser: install it once, and if that is impossible
+// fall back to the plain SPA build (still fully working; just without static SEO HTML).
+async function launchBrowser() {
+  try { return await chromium.launch() } catch { /* not installed */ }
+  try {
+    console.log('Chromium missing, installing it for prerendering…')
+    execSync(`npx playwright install ${process.getuid?.() === 0 ? '--with-deps ' : ''}chromium`, { stdio: 'inherit' })
+    return await chromium.launch()
+  } catch (e) {
+    const why = String(e?.message || e).split(/\r?\n/)[0]
+    console.warn(`⚠ Prerender skipped: no headless browser available (${why}). The site still works as an SPA. Set SKIP_PRERENDER=1 to skip this step.`)
+    return null
+  }
+}
+const browser = process.env.SKIP_PRERENDER ? null : await launchBrowser()
+const server = browser ? await preview({ preview: { port: 0 }, logLevel: 'silent' }) : null
+const base = server?.resolvedUrls.local[0].replace(/\/$/, '')
+if (browser) try {
 const ctx = await browser.newContext({ serviceWorkers: 'block' })
 await ctx.addInitScript(() => { try { localStorage.setItem('invoice-studio:tour-done', '1') } catch { /* ignore */ } })
 const page = await ctx.newPage()
@@ -43,6 +58,7 @@ console.log('prerendered 404.html')
   await browser.close()
   await new Promise((r) => server.httpServer.close(r))
 }
+else copyFileSync('dist/index.html', 'dist/404.html')
 
 const today = new Date().toISOString().slice(0, 10)
 writeFileSync('dist/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>
